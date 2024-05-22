@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d3a8af6916491a41bd529aa7992c5e9, type: 3}
+  m_Name: TestWeaponBarrel
+  m_EditorClassIdentifier: 
+  weaponPartName: Test Weapon Barrel
+  weaponPartIcon: {fileID: 0}
+  weaponPartDescription: Test Weapon Barrel Description
+  weaponPartPrefab: {fileID: 1000013102699618, guid: fb5540d580512442f9def2f7eefc4609, type: 3}
+  weaponPartType: 2
+  modifiers:
+  - type: 1
+    value: 10
+  - type: 2
+    value: 15
+  - type: 4
+    value: -5
+  - type: 5
+    value: 5
+  attachmentSlots:
+  - slotType: 6
+    availableSlots: 1
+  - slotType: 9
+    availableSlots: 1

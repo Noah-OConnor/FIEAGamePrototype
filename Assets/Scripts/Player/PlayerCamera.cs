@@ -9,7 +9,7 @@ public class PlayerCamera : MonoBehaviour
     [SerializeField] private Vector2 lookLimits = new Vector2(-90f, 90f);
 
 
-    private void Update()
+    private void LateUpdate()
     {
         // Get the look input from the InputManager
         lookInput = InputManager.instance.Look;
@@ -23,9 +23,14 @@ public class PlayerCamera : MonoBehaviour
 
         // Apply the current look to the camera's rotation
         cineCamera.transform.eulerAngles = currentLook;
+
+        cineCamera.transform.position = transform.position + new Vector3(0, 1.5f, 0.25f);
+
+        // Apply the current look to the player's rotation
+        transform.eulerAngles = new Vector3(0, currentLook.y, 0);
     }
 
-    public void SetLookSPeed(float newLookSpeed)
+    public void SetLookSpeed(float newLookSpeed)
     {
         lookSpeed = newLookSpeed;
     }

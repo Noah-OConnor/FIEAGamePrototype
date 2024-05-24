@@ -7,8 +7,6 @@ public class InputManager : MonoBehaviour
 
     public string currentControlScheme { get; private set; }
 
-    private float lookSensitivity = 1f;
-
     public PlayerInput playerInput;
 
     #region In Game Input References
@@ -106,7 +104,6 @@ public class InputManager : MonoBehaviour
         // In Game Inputs
         Move = moveAction.ReadValue<Vector2>();
         Look = lookAction.ReadValue<Vector2>();
-        //Look *= lookSensitivity;
 
         InteractPressed = interactAction.WasPressedThisFrame();
         InteractHeld = interactAction.IsPressed();
@@ -140,14 +137,6 @@ public class InputManager : MonoBehaviour
         ClickPressed = clickAction.WasPressedThisFrame();
 
         currentControlScheme = playerInput.currentControlScheme;
-    }
-
-    public void SetLookScale(float scale)
-    {
-        //print(lookAction.ChangeBinding(0).;
-        lookAction = new InputAction(lookAction.name, lookAction.type, lookAction.bindings[0].ToString(), "scaleVector2(x=100,y=100)");
-
-
     }
 }
 

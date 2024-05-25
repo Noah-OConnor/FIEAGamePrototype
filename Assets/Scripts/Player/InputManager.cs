@@ -34,6 +34,10 @@ public class InputManager : MonoBehaviour
     public bool WeaponSecondaryHeld { get; private set; }
     public bool WeaponSecondaryReleased { get; private set; }
 
+    public bool ReloadPressed { get; private set; }
+    public bool ReloadHeld { get; private set; }
+    public bool ReloadReleased { get; private set; }
+
     public bool PauseGamePressed { get; private set; }
 
     private InputAction moveAction;
@@ -43,6 +47,7 @@ public class InputManager : MonoBehaviour
     private InputAction sprintAction;
     private InputAction weaponPrimaryAction;
     private InputAction weaponSecondaryAction;
+    private InputAction reloadAction;
     private InputAction pauseGameAction;
     #endregion
 
@@ -89,6 +94,7 @@ public class InputManager : MonoBehaviour
         sprintAction = playerInput.actions[InputActions.Sprint];
         weaponPrimaryAction = playerInput.actions[InputActions.WeaponPrimary];
         weaponSecondaryAction = playerInput.actions[InputActions.WeaponSecondary];
+        reloadAction = playerInput.actions[InputActions.Reload];
         pauseGameAction = playerInput.actions[InputActions.PauseGame];
 
         // UI Navigation Inputs
@@ -125,6 +131,10 @@ public class InputManager : MonoBehaviour
         WeaponSecondaryHeld = weaponSecondaryAction.IsPressed();
         WeaponSecondaryReleased = weaponSecondaryAction.WasReleasedThisFrame();
 
+        ReloadPressed = reloadAction.WasPressedThisFrame();
+        ReloadHeld = reloadAction.IsPressed();
+        ReloadReleased = reloadAction.WasReleasedThisFrame();
+
         PauseGamePressed = pauseGameAction.WasPressedThisFrame();
 
 
@@ -149,6 +159,7 @@ public static class InputActions
     public const string Sprint = "Sprint";
     public const string WeaponPrimary = "WeaponPrimary";
     public const string WeaponSecondary = "WeaponSecondary";
+    public const string Reload = "Reload";
     public const string PauseGame = "PauseGame";
 
     public const string Navigate = "Navigate";

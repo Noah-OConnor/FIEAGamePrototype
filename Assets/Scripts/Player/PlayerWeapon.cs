@@ -23,6 +23,7 @@ public class PlayerWeapon : MonoBehaviour
     {
         HandleWeaponPrimary();
         DebugRayCast();
+        HandleReload();
     }
 
     private void HandleWeaponPrimary()
@@ -40,8 +41,11 @@ public class PlayerWeapon : MonoBehaviour
         // Set the weapon to not ready to shoot
         readyToShoot = false;
 
+        Vector3 aimDirection = (mouseWorldPosition - projectileSpawnPosition.position).normalized;
+
         // Create a new projectile
-        Transform projectile = Instantiate(currentProjectilePrefab, projectileSpawnPosition.position, Quaternion.identity);
+        Transform projectile = Instantiate(currentProjectilePrefab, projectileSpawnPosition.position,
+            Quaternion.LookRotation(aimDirection, projectileSpawnPosition.forward));
 
         // Reduce the current ammo
         currentAmmo--;
@@ -53,6 +57,14 @@ public class PlayerWeapon : MonoBehaviour
     private void ResetReadyToShoot()
     {
         readyToShoot = true;
+    }
+
+    private void HandleReload()
+    {
+        if (InputManager.instance.ReloadPressed)
+        {
+            currentAmmo = magazineCapacity;
+        }
     }
 
     private void DebugRayCast()

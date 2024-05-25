@@ -1,22 +1,18 @@
+using System.Collections;
+using System.Collections.Generic;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5f;
+    private float moveSpeed = 5f;
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float sprintSpeed = 10f;
     [SerializeField] private float groundDrag = 1f;
-
-    [SerializeField] private float sprintCooldown;
     [SerializeField] private bool sprinting = false;
-    private bool canSprint = true;
-
     private float desiredMoveSpeed;
-    private float lastDesiredMoveSpeed;
-
-    [SerializeField] private float speedIncreaseMultiplier;
-    [SerializeField] private float slopeIncreaseMultiplier;
 
     [Header("Jump Settings")]
     [SerializeField] private float jumpForce = 5f;
@@ -25,25 +21,28 @@ public class PlayerMovement : MonoBehaviour
     private bool canJump = true;
 
     [Header("Ground Check Settings")]
-    private bool isGrounded;
     [SerializeField] private LayerMask groundLayers;
+    private bool isGrounded;
 
     [Header("Slope Handling Settings")]
     [SerializeField] private float maxSlopeAngle = 45f;
+    private RaycastHit slopeHit;
     private bool exitingSlope;
 
+    private float currentSpeed;
     private Vector3 movement;
     private Rigidbody rb;
-    public Vector3 rbVelocity;
 
+    [Header("Debugging Info")]
+    public float flatSpeed;
+    public Vector3 rbVelocity;
     public MovementState state;
 
     public enum MovementState
     {
-        Idle,
-        Moving,
-        Jumping,
-        Airborne
+        idle,
+        walk,
+        sprint
     }
 
     private void Awake()
@@ -51,54 +50,86 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    private void HandleDrag()
-    {
-        if (isGrounded)
-        {
-            rb.linearDamping = groundDrag;
-        }
-        else
-        {
-            rb.linearDamping = 0;
-        }
-    }
-
     private void Update()
     {
         HandleGroundCheck();
-        //SpeedControl();
-        //StateHandler();
-        HandleDrag();
+        SpeedControl();
+        StateHandler();
+        HandleJump();
+        HandleMisc();
 
+        flatSpeed = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z).magnitude;
 
-        rbVelocity = rb.linearVelocity;
-
-        movement = Vector3.zero;
-
-
-        Vector2 input = InputManager.instance.Move;
-
-        if (rbVelocity.magnitude < 0.1 && input == Vector2.zero)
+        currentSpeed = rb.linearVelocity.magnitude;
+        if (currentSpeed < 0.5 && isGrounded && state == MovementState.idle)
         {
-            //rb.linearVelocity = Vector3.zero;
+            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
         }
 
-        // Calculate the movement direction based on the player's rotation
-        movement = input.y * transform.forward + input.x * transform.right;
-
-        if (input == Vector2.zero && isGrounded && canJump)
+        if (rb.linearVelocity.y < -50)
         {
-            rb.useGravity = false;
-            rb.linearDamping = 10f;
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, -50, rb.linearVelocity.z);
         }
+    }
+
+    private void FixedUpdate()
+    {
+        HandlePlayerMovement();
+    }
+
+    private void StateHandler()
+    {
+        // sprint
+        if (sprinting)
+        {
+            state = MovementState.sprint;
+            desiredMoveSpeed = sprintSpeed;
+        }
+        // walk
+        else if (InputManager.instance.Move != Vector2.zero)
+        {
+            state = MovementState.walk;
+            desiredMoveSpeed = walkSpeed;
+        }
+        // idle
         else
         {
-            rb.linearDamping = 0f;
-            rb.useGravity = true;
+            state = MovementState.idle;
+            desiredMoveSpeed = 0;
         }
 
-        HandlePlayerMovement();
+        // air
+        if (!isGrounded && OnSlope())
+        {
+            float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
+            if (angle > maxSlopeAngle && angle != 0)
+            {
+                desiredMoveSpeed = 3;
+            }
+        }
+        else if (!isGrounded)
+        {
+            StopCoroutine(IncreaseDragGradually());
+            rb.linearDamping = 0;
+        }
 
+        moveSpeed = desiredMoveSpeed;
+        
+    }
+
+    private bool OnSlope()
+    {
+        if (Physics.BoxCast(rb.position + new Vector3(0, 0.45f, 0.025f), new Vector3(0.25f, 0.25f, 0.25f), Vector3.down, out RaycastHit hit, Quaternion.identity, 0.35f, groundLayers))
+        {
+            float angle = Vector3.Angle(Vector3.up, hit.normal);
+            return angle < maxSlopeAngle && angle != 0;
+        }
+
+        return false;
+    }
+
+    private void HandleMisc()
+    {
         if (InputManager.instance.WeaponPrimaryPressed)
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -111,54 +142,100 @@ public class PlayerMovement : MonoBehaviour
             Cursor.visible = true;
         }
 
-        if (canJump && InputManager.instance.JumpPressed && isGrounded)
+        rbVelocity = rb.linearVelocity;
+
+        if (InputManager.instance.SprintPressed && state != MovementState.idle)
         {
-            HandleJump();
+            sprinting = !sprinting;
         }
     }
 
     private void HandlePlayerMovement()
     {
-        float slopeAngle = 0;
-        // Cast a ray downwards from the player's position to detect the ground
-        RaycastHit hit;
-        if (Physics.Raycast(rb.position + new Vector3(0, 0.1f, 0), Vector3.down, out hit, 1f))
+        Vector2 input = InputManager.instance.Move;
+
+        // Calculate the movement direction based on the player's rotation
+        movement = input.y * transform.forward + input.x * transform.right;
+        movement.Normalize();
+
+        if (input == Vector2.zero && isGrounded && canJump)
         {
-            // If the player is grounded, adjust the movement vector to match the slope
-            movement = Vector3.ProjectOnPlane(movement, hit.normal);
-
-            // Calculate the angle of the slope
-            slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
-
-            // If the slope is too steep, limit upward movement
-            if (slopeAngle > 45)
-            {
-                // Calculate a slope factor based on the slope angle
-                float slopeFactor = Mathf.InverseLerp(45, 90, slopeAngle);
-                // Limit the upward movement based on the slope factor
-                movement.y *= (1 - slopeFactor);
-            }
+            rb.useGravity = false;
+            //rb.linearDamping = 10f;
+        }
+        else
+        {
+            //rb.linearDamping = 0f;
+            rb.useGravity = true;
         }
 
-        Vector3 movementVector = movement * walkSpeed;
+        if (OnSlope() && !exitingSlope)
+        {
+            rb.AddForce(GetSlopeDirection(movement) * moveSpeed * 20f, ForceMode.Force);
 
-        // Apply the movement as a force
-        rb.linearVelocity = movementVector;
+            if (rb.linearVelocity.y < 0)
+            {
+                rb.AddForce(Vector3.down * 80f, ForceMode.Force);
+            }
+        }
+        else if (isGrounded)                  // on ground
+        {
+            rb.AddForce(movement.normalized * moveSpeed * 10f, ForceMode.Force);
+        }
+        else if (!isGrounded)                 // in air
+        {
+            rb.AddForce(movement.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force);
+        }
+    }
+
+    private Vector3 GetSlopeDirection(Vector3 direction)
+    {
+        return Vector3.ProjectOnPlane(direction, slopeHit.normal);
+    }
+
+    private void SpeedControl()
+    {
+        if (OnSlope() && !exitingSlope)      // limiting speed on slopes
+        {
+            if (rb.linearVelocity.magnitude > moveSpeed)
+            {
+                rb.linearVelocity = rb.linearVelocity.normalized * moveSpeed;
+            }
+        }
+        else                // limiting speed on ground or in air
+        {
+            Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+
+            // limit velocity if needed
+            if (flatVel.magnitude > moveSpeed)
+            {
+                Vector3 limitedVel = flatVel.normalized * moveSpeed;
+                rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
+            }
+        }
     }
 
     private void HandleGroundCheck()
     {
         // Cast a ray downwards from the player's position to detect the ground
-        RaycastHit hit;
-        isGrounded = Physics.Raycast(rb.position + new Vector3(0, 0.1f, 0), Vector3.down, out hit, 0.35f);
+        isGrounded = Physics.SphereCast(rb.position + new Vector3(0, 0.5f, 0), 0.45f, Vector3.down, out RaycastHit hit, 0.1f, groundLayers);
     }
 
     private void HandleJump()
     {
-        canJump = false;
-        Invoke(nameof(JumpReset), 0.25f);
-        // Add the jump force to the player's current movement vector
-        movement += Vector3.up * jumpForce;
+        if (canJump && InputManager.instance.JumpPressed && isGrounded)
+        {
+            exitingSlope = true;
+            canJump = false;
+            Invoke(nameof(JumpReset), 0.25f);
+
+            // reset y velocity
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+
+            rb.linearDamping = 0;
+
+            rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
+        }
     }
 
     private void JumpReset()
@@ -167,6 +244,7 @@ public class PlayerMovement : MonoBehaviour
         if (isGrounded)
         {
             canJump = true;
+            exitingSlope = false;
         }
         else
         {
@@ -180,6 +258,19 @@ public class PlayerMovement : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             canJump = true;
+            StartCoroutine(IncreaseDragGradually());
         }
+    }
+
+    private IEnumerator IncreaseDragGradually()
+    {
+        float time = 0;
+        while (time < 1)
+        {
+            rb.linearDamping = Mathf.Lerp(0, groundDrag, time);
+            time += Time.deltaTime;
+            yield return null;
+        }
+        rb.linearDamping = groundDrag;
     }
 }

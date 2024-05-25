@@ -24,7 +24,7 @@ public class PlayerCamera : MonoBehaviour
         // Apply the current look to the camera's rotation
         cineCamera.transform.eulerAngles = currentLook;
 
-        cineCamera.transform.position = transform.position + new Vector3(0, 1.5f, 0.25f);
+        cineCamera.transform.position = transform.position + new Vector3(0, 1.5f, 0f);
 
         // Apply the current look to the player's rotation
         transform.eulerAngles = new Vector3(0, currentLook.y, 0);

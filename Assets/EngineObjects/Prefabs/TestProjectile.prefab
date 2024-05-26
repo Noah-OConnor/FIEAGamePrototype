@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2536020689801729703}
   - component: {fileID: 3063550135134423723}
   - component: {fileID: 8745536971253943144}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Capsule
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -121,7 +121,7 @@ GameObject:
   - component: {fileID: 1055262799623688233}
   - component: {fileID: 784340670554959249}
   - component: {fileID: 3671133157186103209}
-  m_Layer: 2
+  m_Layer: 9
   m_Name: TestProjectile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -156,7 +156,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85b36ff0ffcc2c44fad55ca66130d1c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 40
+  speed: 10
 --- !u!54 &3671133157186103209
 Rigidbody:
   m_ObjectHideFlags: 0

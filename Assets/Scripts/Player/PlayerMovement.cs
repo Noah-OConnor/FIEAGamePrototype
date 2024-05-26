@@ -30,6 +30,9 @@ public class PlayerMovement : MonoBehaviour
     private bool exitingSlope;
 
     private float currentSpeed;
+    private bool useGravity = false;
+    private bool increaseDragGradually = false;
+    [SerializeField] private float gravityForce = 20f;
     private Vector3 movement;
     private Rigidbody rb;
 
@@ -55,6 +58,7 @@ public class PlayerMovement : MonoBehaviour
         HandleGroundCheck();
         SpeedControl();
         StateHandler();
+        HandleGravity();
         HandleJump();
         HandleMisc();
 
@@ -109,7 +113,7 @@ public class PlayerMovement : MonoBehaviour
         }
         else if (!isGrounded)
         {
-            StopCoroutine(IncreaseDragGradually());
+            increaseDragGradually = false;
             rb.linearDamping = 0;
         }
 
@@ -119,7 +123,7 @@ public class PlayerMovement : MonoBehaviour
 
     private bool OnSlope()
     {
-        if (Physics.BoxCast(rb.position + new Vector3(0, 0.45f, 0.025f), new Vector3(0.25f, 0.25f, 0.25f), Vector3.down, out RaycastHit hit, Quaternion.identity, 0.35f, groundLayers))
+        if (Physics.BoxCast(rb.position + new Vector3(0, 0.8f, 0), new Vector3(0.35f, 0.35f, 0.35f), Vector3.down, out RaycastHit hit, Quaternion.identity, 0.55f, groundLayers))
         {
             float angle = Vector3.Angle(Vector3.up, hit.normal);
             return angle < maxSlopeAngle && angle != 0;
@@ -150,6 +154,14 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void HandleGravity()
+    {
+        if (useGravity)
+        {
+            rb.AddForce(Vector3.down * gravityForce, ForceMode.Acceleration);
+        }
+    }
+
     private void HandlePlayerMovement()
     {
         Vector2 input = InputManager.instance.Move;
@@ -158,24 +170,26 @@ public class PlayerMovement : MonoBehaviour
         movement = input.y * transform.forward + input.x * transform.right;
         movement.Normalize();
 
-        if (input == Vector2.zero && isGrounded && canJump)
+        if (isGrounded && canJump)
         {
-            rb.useGravity = false;
+            useGravity = false;
             //rb.linearDamping = 10f;
         }
         else
         {
             //rb.linearDamping = 0f;
-            rb.useGravity = true;
+            useGravity = true;
         }
 
         if (OnSlope() && !exitingSlope)
         {
+            print("Applying slope movement");
             rb.AddForce(GetSlopeDirection(movement) * moveSpeed * 20f, ForceMode.Force);
 
             if (rb.linearVelocity.y < 0)
             {
-                rb.AddForce(Vector3.down * 80f, ForceMode.Force);
+                rb.AddForce(Vector3.down * 100f, ForceMode.Force);
+                print("Applying down");
             }
         }
         else if (isGrounded)                  // on ground
@@ -225,13 +239,15 @@ public class PlayerMovement : MonoBehaviour
     {
         if (canJump && InputManager.instance.JumpPressed && isGrounded)
         {
+            print("Jump");
             exitingSlope = true;
             canJump = false;
-            Invoke(nameof(JumpReset), 0.25f);
+            Invoke(nameof(JumpReset), 1f);
 
             // reset y velocity
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
 
+            increaseDragGradually = false;
             rb.linearDamping = 0;
 
             rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
@@ -264,9 +280,12 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator IncreaseDragGradually()
     {
+        increaseDragGradually = true;
         float time = 0;
         while (time < 1)
         {
+            if (!increaseDragGradually) yield break;
+
             rb.linearDamping = Mathf.Lerp(0, groundDrag, time);
             time += Time.deltaTime;
             yield return null;

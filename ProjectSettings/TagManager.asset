@@ -15,8 +15,8 @@ TagManager:
   - UI
   - Player
   - FOVHands
-  - 
-  - 
+  - CharacterColliders
+  - Projectile
   - WeaponPart
   - 
   - 

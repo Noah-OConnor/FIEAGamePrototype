@@ -1,32 +1,44 @@
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class AIMain : MonoBehaviour
 {
     [Header("Stats")]
-    [SerializeField] private float speed = 10f;
-    [SerializeField] private float health = 100f;
-    [SerializeField] private float damage = 10f;
-    [SerializeField] private float attackRange = 10f;
-    [SerializeField] private float rotationSpeed = 5f;
+    [SerializeField] protected float speed = 10f;
+    [SerializeField] protected float health = 100f;
+    [SerializeField] protected float damage = 10f;
+    [SerializeField] protected float rotationSpeed = 5f;
+    [SerializeField] protected float sightAngle = 45f;
+
+    [SerializeField] protected float sightRange = 10f;
+    [SerializeField] protected float alertRange = 5f;
+
+    // Flags
+    protected bool hasPlayerShot = false;
+    protected bool hasDamageBeenTaken = false;
+    protected bool attacking = false;
 
     // Components
-    private NavMeshAgent agent;
-    private Rigidbody rb;
-    private Animator animator;
+    protected NavMeshAgent agent;
+    protected Rigidbody rb;
+    protected Animator animator;
 
     // States
-    private AIWander aiWander;
-    private AIAttack aiAttack;
-    private AIDead aiDead;
+    protected AIWander aiWander;
+    protected AIAttack aiAttack;
+    protected AIDead aiDead;
 
-    private AIState currentState = AIState.idle;
-    private enum AIState
+    // References
+    [SerializeField] protected Transform player;
+
+    [SerializeField] protected AIState currentState = AIState.idle;
+    public enum AIState
     {
         idle,
-        wandering,
+        wander,
         stunned,
-        attacking,
+        attack,
         dead
     }
 
@@ -41,12 +53,12 @@ public class AIMain : MonoBehaviour
         aiDead = GetComponent<AIDead>();
     }
 
-    protected virtual void Update()
+    protected virtual void FixedUpdate()
     {
         StateHandler();
     }
 
-    private void StateHandler()
+    protected virtual void StateHandler()
     {
         AIState oldState = currentState;
 
@@ -54,10 +66,17 @@ public class AIMain : MonoBehaviour
         {
             currentState = AIState.dead;
         }
-        // attack else if
+        else if (CanSeePlayer() || IsPlayerInAlertRange() || hasDamageBeenTaken || hasPlayerShot || attacking)
+        {
+            currentState = AIState.attack;
+
+            attacking = true;
+            hasDamageBeenTaken = false;
+            hasPlayerShot = false;
+        }
         else
         {
-            currentState = AIState.wandering;
+            currentState = AIState.wander;
         }
 
         if (oldState != currentState)
@@ -71,34 +90,79 @@ public class AIMain : MonoBehaviour
                 case AIState.idle:
                     // not sure if we need this
                     break;
-                case AIState.wandering:
+                case AIState.wander:
                     aiWander.enabled = true;
                     break;
                 case AIState.stunned:
                     // not sure if we need this
                     break;
-                case AIState.attacking:
-                    aiWander.enabled = true;
+                case AIState.attack:
+                    aiAttack.enabled = true;
                     break;
                 case AIState.dead:
-                    aiWander.enabled = true;
+                    aiDead.enabled = true;
                     break;
             }
         }
     }
 
-    public NavMeshAgent GetAgent()
+    public virtual bool CanSeePlayer()
+    {
+        Vector3 toPlayer = player.position - transform.position;
+        bool isPlayerInFront = Vector3.Angle(transform.forward, toPlayer) < sightAngle / 2;
+        return isPlayerInFront && toPlayer.sqrMagnitude <= Mathf.Pow(sightRange, 2);
+    }
+
+    public virtual bool IsPlayerInSightRange()
+    {
+        return Vector3.SqrMagnitude(transform.position - player.transform.position) <= Mathf.Pow(sightRange, 2);
+    }
+
+    public virtual bool IsPlayerInAlertRange()
+    {
+        return Vector3.SqrMagnitude(transform.position - player.transform.position) <= Mathf.Pow(alertRange, 2);
+    }
+
+    public virtual void OnDamageTaken()
+    {
+        hasDamageBeenTaken = true;
+    }
+
+    public virtual void OnPlayerShoot()
+    {
+        if (IsPlayerInSightRange())
+        {
+            hasPlayerShot = true;
+        }
+    }
+
+    public virtual NavMeshAgent GetAgent()
     {
         return agent;
     }
 
-    public Rigidbody GetRigidbody()
+    public virtual Rigidbody GetRigidbody()
     {
         return rb;
     }
 
-    public Animator GetAnimator()
+    public virtual Animator GetAnimator()
     {
         return animator;
+    }
+
+    public virtual Transform GetPlayer()
+    {
+        return player;
+    }
+
+    public AIState GetCurrentState()
+    {
+        return currentState;
+    }
+
+    public virtual void SetAttacking(bool value)
+    {
+        attacking = value;
     }
 }

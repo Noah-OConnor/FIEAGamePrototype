@@ -7,7 +7,8 @@ public class PlayerCamera : MonoBehaviour
     private Vector2 lookInput;
     [SerializeField] private Transform cineCamera;
     [SerializeField] private Vector2 lookLimits = new Vector2(-90f, 90f);
-
+    [SerializeField] private float smoothTime = 0.3F; // the time it will take to reach the target
+    private Vector3 velocity = Vector3.zero; // the current velocity, this value is modified by the function every time you call it
 
     private void LateUpdate()
     {
@@ -24,7 +25,11 @@ public class PlayerCamera : MonoBehaviour
         // Apply the current look to the camera's rotation
         cineCamera.transform.eulerAngles = currentLook;
 
-        cineCamera.transform.position = transform.position + new Vector3(0, 1.5f, 0f);
+        // Calculate the desired position
+        Vector3 desiredPosition = transform.position + new Vector3(0, 1.5f, 0f);
+
+        // Use Vector3.SmoothDamp to smoothly move the camera towards the desired position
+        cineCamera.transform.position = Vector3.SmoothDamp(cineCamera.transform.position, desiredPosition, ref velocity, smoothTime);
 
         // Apply the current look to the player's rotation
         transform.eulerAngles = new Vector3(0, currentLook.y, 0);

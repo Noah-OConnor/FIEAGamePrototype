@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class TestProjectile : MonoBehaviour
 {
-    public float speed = 10f;
+    [SerializeField] private float speed = 10f;
+    private bool hasHit = false;
 
     private Rigidbody rb;
 
@@ -21,12 +22,11 @@ public class TestProjectile : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Enemy"))
+        if (other.gameObject.CompareTag("Enemy") && !hasHit)
         {
-            //Destroy(other.gameObject);
-            Destroy(gameObject);
-
-            print("hit enemy");
+            hasHit = true;
+            other.GetComponent<EnemyCollider>().TakeDamage(1);
         }
+        Destroy(gameObject);
     }   
 }

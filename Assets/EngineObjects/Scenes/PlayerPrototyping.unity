@@ -418,6 +418,7 @@ GameObject:
   m_Component:
   - component: {fileID: 19141303}
   - component: {fileID: 19141304}
+  - component: {fileID: 19141305}
   m_Layer: 8
   m_Name: RightArmCollider
   m_TagString: Enemy
@@ -459,10 +460,23 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.1
+  m_Radius: 0.15
   m_Height: 0.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.15, z: 0}
+--- !u!114 &19141305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 19141302}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4207fffcb1d81ff4aa32f7592b42f52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  criticalCollider: 0
 --- !u!1 &33499965
 GameObject:
   m_ObjectHideFlags: 0
@@ -1436,6 +1450,7 @@ GameObject:
   m_Component:
   - component: {fileID: 233362828}
   - component: {fileID: 233362829}
+  - component: {fileID: 233362830}
   m_Layer: 8
   m_Name: HeadCollider
   m_TagString: Enemy
@@ -1477,10 +1492,23 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
+  m_Radius: 0.55
   m_Height: 1.1
   m_Direction: 1
   m_Center: {x: 0, y: 0.45, z: 0}
+--- !u!114 &233362830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 233362827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4207fffcb1d81ff4aa32f7592b42f52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  criticalCollider: 1
 --- !u!4 &252782342 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -1388206636590870031, guid: ebc5845b1e334fc429f2631de3ca961a, type: 3}
@@ -1771,7 +1799,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   aimColliderLayerMask:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 257
   debugTransform: {fileID: 1369867750}
   currentProjectilePrefab: {fileID: 1055262799623688233, guid: f2fdfbdaa632b7a4db2bb21c76521dc5, type: 3}
   projectileSpawnPosition: {fileID: 216640754}
@@ -3918,6 +3946,7 @@ GameObject:
   m_Component:
   - component: {fileID: 867071558}
   - component: {fileID: 867071559}
+  - component: {fileID: 867071560}
   m_Layer: 8
   m_Name: LeftArmCollider
   m_TagString: Enemy
@@ -3959,10 +3988,23 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.1
+  m_Radius: 0.15
   m_Height: 0.8
   m_Direction: 1
   m_Center: {x: 0, y: 0.15, z: 0}
+--- !u!114 &867071560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 867071557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4207fffcb1d81ff4aa32f7592b42f52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  criticalCollider: 0
 --- !u!1 &992976500
 GameObject:
   m_ObjectHideFlags: 0
@@ -5959,6 +6001,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1949004541}
   - component: {fileID: 1949004542}
+  - component: {fileID: 1949004543}
   m_Layer: 8
   m_Name: ChestCollider
   m_TagString: Enemy
@@ -6000,10 +6043,23 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.4
+  m_Radius: 0.45
   m_Height: 1.2
   m_Direction: 1
   m_Center: {x: 0, y: -0.1, z: 0}
+--- !u!114 &1949004543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1949004540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4207fffcb1d81ff4aa32f7592b42f52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  criticalCollider: 0
 --- !u!43 &1981533362
 Mesh:
   m_ObjectHideFlags: 0
@@ -6179,6 +6235,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1984307341}
   - component: {fileID: 1984307342}
+  - component: {fileID: 1984307343}
   m_Layer: 8
   m_Name: LeftLegCollider
   m_TagString: Enemy
@@ -6224,6 +6281,19 @@ CapsuleCollider:
   m_Height: 0.5
   m_Direction: 1
   m_Center: {x: 0, y: 0.3, z: 0}
+--- !u!114 &1984307343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1984307340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4207fffcb1d81ff4aa32f7592b42f52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  criticalCollider: 0
 --- !u!1 &1989706763
 GameObject:
   m_ObjectHideFlags: 0
@@ -6234,6 +6304,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1989706764}
   - component: {fileID: 1989706765}
+  - component: {fileID: 1989706766}
   m_Layer: 8
   m_Name: RightLegCollider
   m_TagString: Enemy
@@ -6279,6 +6350,19 @@ CapsuleCollider:
   m_Height: 0.5
   m_Direction: 1
   m_Center: {x: 0, y: 0.3, z: 0}
+--- !u!114 &1989706766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1989706763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4207fffcb1d81ff4aa32f7592b42f52a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  criticalCollider: 0
 --- !u!1 &2038555855
 GameObject:
   m_ObjectHideFlags: 0

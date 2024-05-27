@@ -53,9 +53,11 @@ public class AIMain : MonoBehaviour
         aiDead = GetComponent<AIDead>();
     }
 
-    protected virtual void FixedUpdate()
+    protected virtual void Update()
     {
         StateHandler();
+
+        animator.SetFloat("Forward", agent.velocity.magnitude);
     }
 
     protected virtual void StateHandler()

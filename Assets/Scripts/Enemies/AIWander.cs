@@ -10,6 +10,7 @@ public class AIWander : MonoBehaviour
 
     protected AIMain aiMain;
     protected NavMeshAgent agent;
+    protected Animator animator;
 
     private Coroutine wanderRoutine;
 
@@ -17,7 +18,10 @@ public class AIWander : MonoBehaviour
     {
         aiMain = GetComponent<AIMain>();
         agent = aiMain.GetAgent();
+        animator = aiMain.GetAnimator();
         agent.speed = wanderSpeed;
+        agent.stoppingDistance = 0f;
+
         wanderRoutine = StartCoroutine(WanderRoutine());
     }
 

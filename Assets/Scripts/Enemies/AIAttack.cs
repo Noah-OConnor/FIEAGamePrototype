@@ -10,12 +10,15 @@ public class AIAttack : MonoBehaviour
     [SerializeField] protected float searchRadius = 5f;
     [SerializeField] protected float searchSpeed = 5f;
     [SerializeField] protected float chaseSpeed = 8f;
+    [SerializeField] protected float chaseRotationSpeed = 8f;
 
     protected Vector3 lastKnownPlayerPosition;
 
     protected bool resetting = false;
+    protected bool attacking = false;
 
     protected AIMain aiMain;
+    protected Animator animator;
     protected NavMeshAgent agent;
     protected Transform player;
 
@@ -31,12 +34,13 @@ public class AIAttack : MonoBehaviour
     protected virtual void OnEnable()
     {
         aiMain = GetComponent<AIMain>();
+        animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
         player = aiMain.GetPlayer();
         currentState = AttackState.none;
     }
 
-    protected virtual void FixedUpdate()
+    protected virtual void Update()
     {
         StateHandler();
     }
@@ -45,7 +49,7 @@ public class AIAttack : MonoBehaviour
     {
         AttackState oldState = currentState;
 
-        if (IsPlayerInMeleeRange())
+        if (IsPlayerInMeleeRange() || attacking)
         {
             currentState = AttackState.attack;
         }
@@ -65,16 +69,32 @@ public class AIAttack : MonoBehaviour
             {
                 case AttackState.chase:
                     InvokeRepeating(nameof(Chase), 0f, 0.1f);
+                    agent.stoppingDistance = 0f;
                     break;
                 case AttackState.search:
                     lastKnownPlayerPosition = player.position;
                     StartCoroutine(SearchRoutine());
+                    agent.stoppingDistance = 0f;
                     break;
                 case AttackState.attack:
-                    agent.SetDestination(transform.position);
+                    //agent.SetDestination(transform.position);
+                    agent.stoppingDistance = meleeRange;
+                    Attack();
+                    attacking = true;
                     break;
             }
         }
+    }
+
+    protected virtual void Attack()
+    {
+        animator.SetTrigger("Attack");
+        Invoke(nameof(ResetAttack), 2f);
+    }
+
+    protected virtual void ResetAttack()
+    {
+        attacking = false;
     }
 
     protected virtual void Chase()

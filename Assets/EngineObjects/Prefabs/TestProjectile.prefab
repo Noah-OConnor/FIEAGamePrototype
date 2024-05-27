@@ -157,6 +157,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 50
+  floatingNumberPrefab: {fileID: 7197343216186090099, guid: 1ac48089406a5cd4fa8534efb9122931, type: 3}
+  hitEffectGreenPrefab: {fileID: 762538703870794566, guid: 768229c32bd38734696426d36c015bb8, type: 3}
+  hitEffectRedPrefab: {fileID: 762538703870794566, guid: 104ce4d2be2690144ab7ea37b4b35eb3, type: 3}
 --- !u!54 &3671133157186103209
 Rigidbody:
   m_ObjectHideFlags: 0

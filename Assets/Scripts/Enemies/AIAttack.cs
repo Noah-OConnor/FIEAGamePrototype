@@ -40,6 +40,12 @@ public class AIAttack : MonoBehaviour
         currentState = AttackState.none;
     }
 
+    protected virtual void OnDisable()
+    {
+        currentState = AttackState.none;
+        CancelInvoke(nameof(Chase));
+    }
+
     protected virtual void Update()
     {
         StateHandler();

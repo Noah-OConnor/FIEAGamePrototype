@@ -3,7 +3,12 @@ using UnityEngine;
 public class TestProjectile : MonoBehaviour
 {
     [SerializeField] private float speed = 10f;
+    private int damage = 10;
     private bool hasHit = false;
+
+    [SerializeField] private Transform floatingNumberPrefab;
+    [SerializeField] private Transform hitEffectGreenPrefab;
+    [SerializeField] private Transform hitEffectRedPrefab;
 
     private Rigidbody rb;
 
@@ -22,11 +27,26 @@ public class TestProjectile : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Enemy") && !hasHit)
+        if (hasHit) return;
+        hasHit = true;
+
+        Vector3 hitPosition = transform.position - transform.forward * 0.5f; // Offset the hit position in the direction of the projectile's movement
+
+        if (other.gameObject.CompareTag("Enemy"))
         {
-            hasHit = true;
-            other.GetComponent<EnemyCollider>().TakeDamage(1);
+            other.GetComponent<EnemyCollider>().TakeDamage(damage);
+
+            // spawn damage number
+            Transform floatingNumber = Instantiate(floatingNumberPrefab, hitPosition, Quaternion.identity);
+            floatingNumber.GetComponent<FloatingNumber>().SetNumber(damage);
+            // spawn hit enemy effect
+            Instantiate(hitEffectGreenPrefab, hitPosition, Quaternion.identity);
+        }
+        else
+        {
+            // spawn hit effect
+            Instantiate(hitEffectRedPrefab, hitPosition, Quaternion.identity);
         }
         Destroy(gameObject);
-    }   
+    }
 }

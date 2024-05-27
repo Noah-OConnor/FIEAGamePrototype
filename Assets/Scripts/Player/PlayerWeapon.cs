@@ -72,7 +72,7 @@ public class PlayerWeapon : MonoBehaviour
         // this allowed me to make sure that the crosshair on the screen matched up with where the player is shooting
         Vector2 screenCenterPoint = new Vector2(Screen.width / 2, Screen.height / 2);
         Ray ray = Camera.main.ScreenPointToRay(screenCenterPoint);
-        if (Physics.Raycast(ray, out RaycastHit raycastHit, 999f, aimColliderLayerMask))
+        if (Physics.Raycast(ray, out RaycastHit raycastHit, Mathf.Infinity, aimColliderLayerMask))
         {
             debugTransform.position = raycastHit.point;
             mouseWorldPosition = raycastHit.point;

@@ -1,22 +1,37 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerWeapon : MonoBehaviour
 {
-    [SerializeField] LayerMask aimColliderLayerMask;
-    [SerializeField] Transform debugTransform;
-    [SerializeField] Transform currentProjectilePrefab;
-    [SerializeField] Transform projectileSpawnPosition;
-
-    private bool readyToShoot = true;
-
+    [Header("Stats")]
+    [SerializeField] private float maxBulletRange = 100f;
+    [SerializeField] private float bulletSpeed = 10f;
+    [SerializeField] private int bulletDamage = 10;
     [SerializeField] private int magazineCapacity = 30;
-    private int currentAmmo;
     [SerializeField] private float fireRate = 100f;
+
+    public float maxBulletAngle;
+
+    [Header("References")]
+    [SerializeField] private Transform debugTransform;
+    [SerializeField] private Transform currentProjectilePrefab;
+    [SerializeField] private Transform projectileSpawnTransform;
+    [SerializeField] private Transform floatingNumberPrefab;
+    [SerializeField] private Transform hitEffectGreenPrefab;
+    [SerializeField] private Transform hitEffectRedPrefab;
+
+    [Header("Settings")]
+    [SerializeField] private LayerMask aimColliderLayerMask;
+
+    private int currentAmmo;
+    private bool readyToShoot = true;
     private Vector3 mouseWorldPosition;
+    private Vector3 cameraPosition;
 
     private void Start()
     {
         currentAmmo = magazineCapacity;
+        cameraPosition = Camera.main.transform.position;
     }
 
     private void Update()
@@ -41,17 +56,77 @@ public class PlayerWeapon : MonoBehaviour
         // Set the weapon to not ready to shoot
         readyToShoot = false;
 
-        Vector3 aimDirection = (mouseWorldPosition - projectileSpawnPosition.position).normalized;
+        Vector3 aimDirection = (mouseWorldPosition - projectileSpawnTransform.position).normalized;
+        float angle = Vector3.Angle(aimDirection, transform.forward);
+        bool isWithinMaxAngle = Mathf.Abs(angle) < maxBulletAngle;
 
-        // Create a new projectile
-        Transform projectile = Instantiate(currentProjectilePrefab, projectileSpawnPosition.position,
-            Quaternion.LookRotation(aimDirection, projectileSpawnPosition.forward));
+        Vector3 initialPosition = isWithinMaxAngle ? projectileSpawnTransform.position : cameraPosition;
+        aimDirection = isWithinMaxAngle ? aimDirection : (mouseWorldPosition - cameraPosition).normalized;
+
+        // Start a coroutine to delay the bullet's impact
+        StartCoroutine(BulletImpactDelay(aimDirection, initialPosition, isWithinMaxAngle));
 
         // Reduce the current ammo
         currentAmmo--;
 
         // Set the weapon to ready to shoot after the fire rate
         Invoke("ResetReadyToShoot", 60f / fireRate);
+    }
+
+    private IEnumerator BulletImpactDelay(Vector3 aimDirection, Vector3 initialPosition, bool isWithinMaxAngle)
+    {
+        //print(isWithinMaxAngle);
+        float totalDistance = 0;
+
+        Vector3 projectilePosition = initialPosition;
+
+        Transform bulletTransform = null;
+
+        if (isWithinMaxAngle)
+        {
+            bulletTransform = Instantiate(debugTransform, projectilePosition, Quaternion.identity);
+        }
+
+        while (totalDistance < maxBulletRange)
+        {
+            float travelDistance = isWithinMaxAngle ? bulletSpeed * Time.deltaTime : bulletSpeed * Time.deltaTime * 5;
+            totalDistance += travelDistance;
+
+            if (bulletTransform != null)
+            {
+                // Move the debug object to the projectile's position
+                bulletTransform.position = projectilePosition;
+            }
+
+            if (Physics.Raycast(projectilePosition, aimDirection, out RaycastHit hit, travelDistance, aimColliderLayerMask))
+            {
+                // Check if the raycast hit an enemy
+                if (hit.collider.gameObject.CompareTag("Enemy"))
+                {
+                    // Apply damage to the enemy
+                    hit.collider.gameObject.GetComponent<EnemyCollider>().TakeDamage(bulletDamage);
+
+                    // spawn damage number
+                    Transform floatingNumber = Instantiate(floatingNumberPrefab, hit.point, Quaternion.identity);
+                    floatingNumber.GetComponent<FloatingNumber>().SetNumber((int)bulletDamage);
+                    // spawn hit enemy effect
+                    Instantiate(hitEffectGreenPrefab, hit.point, Quaternion.identity);
+                }
+                else
+                {
+                    // spawn hit effect
+                    Instantiate(hitEffectRedPrefab, hit.point, Quaternion.identity);
+                }
+
+                if (isWithinMaxAngle) Destroy(bulletTransform.gameObject);
+
+                break;
+            }
+            // if the raycast didn't hit anything, move the projectile forward
+            projectilePosition += aimDirection * travelDistance;
+
+            yield return null;
+        }
     }
 
     private void ResetReadyToShoot()

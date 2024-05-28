@@ -31,6 +31,20 @@ public class AIAttack : MonoBehaviour
         search
     }
 
+    [SerializeField] protected Weapons leftWeapon;
+    [SerializeField] protected Transform leftWeaponTransform;
+    [SerializeField] protected Weapons rightWeapon;
+    [SerializeField] protected Transform rightWeaponTransform;
+    protected enum Weapons
+    {
+        none,
+        shield,
+        sword,
+        axe,
+        crossbow,
+        staff
+    }
+
     protected virtual void OnEnable()
     {
         aiMain = GetComponent<AIMain>();
@@ -83,7 +97,6 @@ public class AIAttack : MonoBehaviour
                     agent.stoppingDistance = 0f;
                     break;
                 case AttackState.attack:
-                    //agent.SetDestination(transform.position);
                     agent.stoppingDistance = meleeRange;
                     Attack();
                     attacking = true;
@@ -94,8 +107,47 @@ public class AIAttack : MonoBehaviour
 
     protected virtual void Attack()
     {
-        animator.SetTrigger("Attack");
-        Invoke(nameof(ResetAttack), 2f);
+        switch (leftWeapon)
+        {
+            case Weapons.shield:
+                // Shield attack logic
+                animator.SetTrigger("ShieldAttack");
+                break;
+            case Weapons.sword:
+                // Sword attack logic
+                animator.SetTrigger("SwordAttack");
+                break;
+            case Weapons.axe:
+                // Axe attack logic
+                animator.SetTrigger("AxeAttack");
+                break;
+        }
+
+        switch (rightWeapon)
+        {
+            case Weapons.sword:
+                // Sword attack logic
+                animator.SetTrigger("SwordAttack");
+                break;
+            case Weapons.axe:
+                // Axe attack logic
+                animator.SetTrigger("AxeAttack");
+                break;
+            case Weapons.crossbow:
+                // Crossbow attack logic
+                animator.SetTrigger("CrossbowAttack");
+                break;
+            case Weapons.staff:
+                // Staff attack logic
+                animator.SetTrigger("StaffAttack");
+                break;
+            default:
+                // Default attack logic
+                animator.SetTrigger("Attack");
+                break;
+        }
+
+        Invoke(nameof(ResetAttack), 1.1f);
     }
 
     protected virtual void ResetAttack()

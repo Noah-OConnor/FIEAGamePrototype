@@ -11,22 +11,6 @@ public class EnemyCollider : MonoBehaviour
         aiMain = GetComponentInParent<AIMain>();
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.transform.CompareTag("PlayerProjectile"))
-        {
-            if (criticalCollider)
-            {
-                aiMain.TakeDamage(2);
-            }
-            else
-            {
-                aiMain.TakeDamage(1);
-            }
-            Destroy(collision.gameObject);
-        }
-    }
-
     public void TakeDamage(float damage)
     {
         if (criticalCollider)

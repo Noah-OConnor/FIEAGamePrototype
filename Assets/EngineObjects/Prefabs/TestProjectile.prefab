@@ -49,7 +49,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7403527035611833243}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -102,7 +102,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
@@ -119,8 +119,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1055262799623688233}
-  - component: {fileID: 784340670554959249}
-  - component: {fileID: 3671133157186103209}
   m_Layer: 9
   m_Name: TestProjectile
   m_TagString: PlayerProjectile
@@ -144,46 +142,3 @@ Transform:
   - {fileID: 7023837786251327911}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &784340670554959249
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8334348211319292903}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85b36ff0ffcc2c44fad55ca66130d1c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 50
-  floatingNumberPrefab: {fileID: 7197343216186090099, guid: 1ac48089406a5cd4fa8534efb9122931, type: 3}
-  hitEffectGreenPrefab: {fileID: 762538703870794566, guid: 768229c32bd38734696426d36c015bb8, type: 3}
-  hitEffectRedPrefab: {fileID: 762538703870794566, guid: 104ce4d2be2690144ab7ea37b4b35eb3, type: 3}
---- !u!54 &3671133157186103209
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8334348211319292903}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 112
-  m_CollisionDetection: 0

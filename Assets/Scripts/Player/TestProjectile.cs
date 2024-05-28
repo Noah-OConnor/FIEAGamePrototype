@@ -10,11 +10,19 @@ public class TestProjectile : MonoBehaviour
     [SerializeField] private Transform hitEffectGreenPrefab;
     [SerializeField] private Transform hitEffectRedPrefab;
 
+    [SerializeField] private float showMeshDelay;
+
+    private Vector3 originalPosition;
+
     private Rigidbody rb;
+    private MeshRenderer meshRenderer;
 
     void Start()
     {
+        originalPosition = transform.position;
+
         rb = GetComponent<Rigidbody>();
+        meshRenderer = GetComponentInChildren<MeshRenderer>();
         if (rb != null)
         {
             rb.linearVelocity = transform.forward * speed;
@@ -25,16 +33,24 @@ public class TestProjectile : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void Update()
+    {
+        if (!meshRenderer.enabled && (transform.position - originalPosition).sqrMagnitude > 0.1f)
+        {
+            meshRenderer.enabled = true;
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
     {
         if (hasHit) return;
         hasHit = true;
 
-        Vector3 hitPosition = transform.position - transform.forward * 0.5f; // Offset the hit position in the direction of the projectile's movement
+        Vector3 hitPosition = transform.position; // Offset the hit position in the direction of the projectile's movement
 
-        if (other.gameObject.CompareTag("Enemy"))
+        if (collision.gameObject.CompareTag("Enemy"))
         {
-            other.GetComponent<EnemyCollider>().TakeDamage(damage);
+            collision.gameObject.GetComponent<EnemyCollider>().TakeDamage(damage);
 
             // spawn damage number
             Transform floatingNumber = Instantiate(floatingNumberPrefab, hitPosition, Quaternion.identity);

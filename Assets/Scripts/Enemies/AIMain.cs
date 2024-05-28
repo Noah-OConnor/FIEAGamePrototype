@@ -111,7 +111,7 @@ public class AIMain : MonoBehaviour
     public virtual void TakeDamage(float damage)
     {
         health -= damage;
-        print(damage + " damage taken. Current health: " + health);
+        //print(damage + " damage taken. Current health: " + health);
         OnDamageTaken();
     }
 

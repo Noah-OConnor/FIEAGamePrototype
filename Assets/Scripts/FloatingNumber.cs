@@ -5,6 +5,8 @@ public class FloatingNumber : MonoBehaviour
 {
     [SerializeField] private float speed = 1f; // Speed at which the number will move up
     [SerializeField] private float lifetime = 1f; // Time after which the number will disappear
+    private float xSpeed;
+    private float zSpeed;
 
     private TMP_Text text;
     private Camera mainCamera;
@@ -13,6 +15,9 @@ public class FloatingNumber : MonoBehaviour
     {
         text = GetComponent<TMP_Text>();
         mainCamera = Camera.main; // Get the main camera
+
+        xSpeed = Random.Range(-speed, speed);
+        zSpeed = Random.Range(-speed, speed);
     }
 
     public void SetNumber(int number)
@@ -22,7 +27,7 @@ public class FloatingNumber : MonoBehaviour
 
     private void Update()
     {
-        transform.position += new Vector3(0, speed * Time.deltaTime, 0);
+        transform.position += new Vector3(xSpeed * Time.deltaTime, speed * Time.deltaTime, zSpeed * Time.deltaTime);
 
         // Make the number always face the camera
         transform.LookAt(transform.position + mainCamera.transform.rotation * Vector3.forward,

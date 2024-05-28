@@ -183,13 +183,11 @@ public class PlayerMovement : MonoBehaviour
 
         if (OnSlope() && !exitingSlope)
         {
-            print("Applying slope movement");
             rb.AddForce(GetSlopeDirection(movement) * moveSpeed * 20f, ForceMode.Force);
 
             if (rb.linearVelocity.y < 0)
             {
                 rb.AddForce(Vector3.down * 100f, ForceMode.Force);
-                print("Applying down");
             }
         }
         else if (isGrounded)                  // on ground
@@ -233,16 +231,16 @@ public class PlayerMovement : MonoBehaviour
     {
         // Cast a ray downwards from the player's position to detect the ground
         isGrounded = Physics.SphereCast(rb.position + new Vector3(0, 0.5f, 0), 0.45f, Vector3.down, out RaycastHit hit, 0.1f, groundLayers);
+        //isGrounded = canJump;
     }
 
     private void HandleJump()
     {
-        if (canJump && InputManager.instance.JumpPressed && isGrounded)
+        if (canJump && InputManager.instance.JumpHeld && isGrounded)
         {
-            print("Jump");
             exitingSlope = true;
             canJump = false;
-            Invoke(nameof(JumpReset), 1f);
+            Invoke(nameof(JumpReset), 0.7f);
 
             // reset y velocity
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
@@ -256,16 +254,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void JumpReset()
     {
-        print("Jump Reset");
-        if (isGrounded)
-        {
-            canJump = true;
-            exitingSlope = false;
-        }
-        else
-        {
-            Invoke(nameof(JumpReset), 0.1f);
-        }
+        canJump = true;
+        exitingSlope = false;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -273,7 +263,7 @@ public class PlayerMovement : MonoBehaviour
         // Check if the collision is with the ground
         if (collision.gameObject.CompareTag("Ground"))
         {
-            canJump = true;
+            //canJump = true;
             StartCoroutine(IncreaseDragGradually());
         }
     }

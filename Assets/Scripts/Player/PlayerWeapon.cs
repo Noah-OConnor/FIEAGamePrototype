@@ -84,7 +84,9 @@ public class PlayerWeapon : MonoBehaviour
 
         if (isWithinMaxAngle)
         {
-            bulletTransform = Instantiate(debugTransform, projectilePosition, Quaternion.identity);
+            bulletTransform = Instantiate(currentProjectilePrefab, projectilePosition, Quaternion.identity);
+            // rotate the bullet to face the direction it's moving
+            bulletTransform.forward = aimDirection;
         }
 
         while (totalDistance < maxBulletRange)
@@ -118,7 +120,7 @@ public class PlayerWeapon : MonoBehaviour
                     Instantiate(hitEffectRedPrefab, hit.point, Quaternion.identity);
                 }
 
-                if (isWithinMaxAngle) Destroy(bulletTransform.gameObject);
+                if (isWithinMaxAngle) Destroy(bulletTransform.gameObject, 0.1f);
 
                 break;
             }

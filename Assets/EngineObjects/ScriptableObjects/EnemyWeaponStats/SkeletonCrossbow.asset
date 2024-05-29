@@ -15,6 +15,7 @@ MonoBehaviour:
   weaponType: 4
   damage: 7
   speed: 1
-  range: 10
+  meleeRange: 2
+  rangedRange: 10
   cooldown: 5
   knockback: 0.5

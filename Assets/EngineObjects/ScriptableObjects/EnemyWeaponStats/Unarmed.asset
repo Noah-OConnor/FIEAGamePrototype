@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponType: 0
   damage: 5
-  speed: 1
-  range: 1
+  speed: 2
+  meleeRange: 2
+  rangedRange: 0
   cooldown: 5
   knockback: 0.5

@@ -29,10 +29,12 @@ public class AIAttack : MonoBehaviour
         search
     }
 
-    [SerializeField] protected EnemyWeaponStats leftWeapon;
-    [SerializeField] protected Transform leftWeaponTransform;
     [SerializeField] protected EnemyWeaponStats rightWeapon;
     [SerializeField] protected Transform rightWeaponTransform;
+    [SerializeField] protected EnemyWeaponStats leftWeapon;
+    [SerializeField] protected Transform leftWeaponTransform;
+
+    [SerializeField] protected EnemyWeaponStats unarmedWeapon;
 
     protected virtual void OnEnable()
     {
@@ -43,6 +45,16 @@ public class AIAttack : MonoBehaviour
         currentState = AttackState.none;
 
         animator.SetBool("Combat", true);
+
+        if (rightWeapon == null)
+        {
+            rightWeapon = unarmedWeapon;
+        }
+
+        if (leftWeapon == null)
+        {
+            leftWeapon = unarmedWeapon;
+        }
     }
 
     protected virtual void OnDisable()
@@ -63,7 +75,7 @@ public class AIAttack : MonoBehaviour
     {
         AttackState oldState = currentState;
 
-        if (IsPlayerInRange(rightWeapon.meleeRange) || IsPlayerInRange(rightWeapon.meleeRange) || attacking)
+        if (IsPlayerInRange(rightWeapon.rangedRange) || IsPlayerInRange(rightWeapon.meleeRange) || attacking)
         {
             currentState = AttackState.attack;
 
@@ -81,6 +93,19 @@ public class AIAttack : MonoBehaviour
         if (oldState != currentState)
         {
             animator.SetBool("Blocking", false);
+            animator.SetBool("Spinning", false);
+            animator.SetBool("Shooting", false);
+
+            if (rightWeapon == null)
+            {
+                rightWeapon = unarmedWeapon;
+            }
+
+            if (leftWeapon == null)
+            {
+                leftWeapon = unarmedWeapon;
+            }
+
             CancelInvoke(nameof(Chase));
             switch (currentState)
             {
@@ -93,7 +118,7 @@ public class AIAttack : MonoBehaviour
                     agent.stoppingDistance = 0f;
                     break;
                 case AttackState.attack:
-                    agent.stoppingDistance = rightWeapon.meleeRange;
+                    agent.stoppingDistance = rightWeapon.rangedRange;
                     Attack();
                     break;
             }
@@ -131,6 +156,7 @@ public class AIAttack : MonoBehaviour
         {
             case EnemyWeaponStats.Weapons.shield:
                 animator.SetTrigger("1HandMeleeAttack");
+                animator.SetTrigger("ShieldBlock");
                 animator.SetBool("Blocking", true);
                 break;
             case EnemyWeaponStats.Weapons.sword:
@@ -151,32 +177,53 @@ public class AIAttack : MonoBehaviour
         {
             case EnemyWeaponStats.Weapons.shield:
                 animator.SetTrigger("1HandMeleeAttack");
+                animator.SetTrigger("ShieldBlock");
                 animator.SetBool("Blocking", true);
                 break;
             case EnemyWeaponStats.Weapons.sword:
                 animator.SetTrigger("DualMeleeAttack");
-                animator.SetTrigger("SwordAttack");
                 break;
             case EnemyWeaponStats.Weapons.axe:
-                animator.SetTrigger("MeleeSpin");
+                animator.SetTrigger("DualMeleeAttack");
                 break;
             default:    // unarmed or missing reference
-                animator.SetTrigger("2HandMeleeAttack");
+                animator.SetTrigger("MeleeSpin");
+                animator.SetBool("Spinning", true);
+                InvokeRepeating(nameof(SpinMove), 0f, 0.25f);
                 break;
         }
     }
 
     protected virtual void CrossbowAttack()
     {
-        switch (leftWeapon.weaponType)
+        if (IsPlayerInRange(rightWeapon.meleeRange))
         {
-            case EnemyWeaponStats.Weapons.shield:
-                animator.SetTrigger("1HandCrossbowAttack");
-                animator.SetBool("Blocking", true);
-                break;
-            default:    // unarmed or missing reference
-                animator.SetTrigger("2HandCrossbowAttack");
-                break;
+            switch (leftWeapon.weaponType)
+            {
+                case EnemyWeaponStats.Weapons.shield:
+                    animator.SetTrigger("UnarmedAttack");
+                    animator.SetTrigger("ShieldBlock");
+                    animator.SetBool("Blocking", true);
+                    break;
+                default:    // unarmed or missing reference
+                    animator.SetTrigger("UnarmedAttack");
+                    break;
+            }
+
+        }
+        else 
+        { 
+            switch (leftWeapon.weaponType)
+            {
+                case EnemyWeaponStats.Weapons.shield:
+                    animator.SetTrigger("1HandCrossbowAttack");
+                    animator.SetTrigger("ShieldBlock");
+                    animator.SetBool("Blocking", true);
+                    break;
+                default:    // unarmed or missing reference
+                    animator.SetTrigger("2HandCrossbowAttack");
+                    break;
+            }
         }
     }
 
@@ -188,6 +235,7 @@ public class AIAttack : MonoBehaviour
             {
                 case EnemyWeaponStats.Weapons.shield:
                     animator.SetTrigger("1HandMeleeAttack");
+                    animator.SetTrigger("ShieldBlock");
                     animator.SetBool("Blocking", true);
                     break;
                 default:    // unarmed or missing reference
@@ -204,6 +252,7 @@ public class AIAttack : MonoBehaviour
             {
                 case EnemyWeaponStats.Weapons.shield:
                     animator.SetTrigger("Summon");
+                    animator.SetTrigger("ShieldBlock");
                     animator.SetBool("Blocking", true);
                     break;
                 default:    // unarmed or missing reference
@@ -217,6 +266,7 @@ public class AIAttack : MonoBehaviour
             {
                 case EnemyWeaponStats.Weapons.shield:
                     animator.SetTrigger("1HandStaffAttack");
+                    animator.SetTrigger("ShieldBlock");
                     animator.SetBool("Blocking", true);
                     break;
                 default:    // unarmed or missing reference
@@ -232,6 +282,7 @@ public class AIAttack : MonoBehaviour
         {
             case EnemyWeaponStats.Weapons.shield:
                 animator.SetTrigger("ShieldBashAttack");
+                animator.SetTrigger("ShieldBlock");
                 animator.SetBool("Blocking", true);
                 break;
             case EnemyWeaponStats.Weapons.unarmed:
@@ -267,6 +318,15 @@ public class AIAttack : MonoBehaviour
         if (currentState != AttackState.chase) return;
 
         agent.speed = chaseSpeed;
+        lastKnownPlayerPosition = player.position;
+        agent.SetDestination(player.position);
+    }
+
+    protected virtual void SpinMove()
+    {
+        if (currentState != AttackState.attack) return;
+
+        agent.speed = chaseSpeed / 2f;
         lastKnownPlayerPosition = player.position;
         agent.SetDestination(player.position);
     }

@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 052b3b48d25e48642985dd6adf0aadb8, type: 3}
   m_Name: SkeletonShieldSmall
   m_EditorClassIdentifier: 
-  weaponName: Small Shield
   weaponType: 1
   damage: 5
   speed: 1
-  range: 1
+  meleeRange: 2
+  rangedRange: 0
+  cooldown: 0
   knockback: 2

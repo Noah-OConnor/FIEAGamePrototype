@@ -58,9 +58,8 @@ public class PlayerMovement : MonoBehaviour
         HandleGroundCheck();
         SpeedControl();
         StateHandler();
-        HandleGravity();
-        HandleJump();
         HandleMisc();
+        HandleJump();
 
         flatSpeed = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z).magnitude;
 
@@ -79,12 +78,13 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         HandlePlayerMovement();
+        HandleGravity();
     }
 
     private void StateHandler()
     {
         // sprint
-        if (sprinting)
+        if (sprinting && InputManager.instance.Move != Vector2.zero)
         {
             state = MovementState.sprint;
             desiredMoveSpeed = sprintSpeed;
@@ -98,6 +98,7 @@ public class PlayerMovement : MonoBehaviour
         // idle
         else
         {
+            Invoke(nameof(SprintReset), 0.5f);
             state = MovementState.idle;
             desiredMoveSpeed = 0;
         }
@@ -148,7 +149,7 @@ public class PlayerMovement : MonoBehaviour
 
         rbVelocity = rb.linearVelocity;
 
-        if (InputManager.instance.SprintPressed && state != MovementState.idle)
+        if (InputManager.instance.SprintPressed)
         {
             sprinting = !sprinting;
         }
@@ -281,5 +282,11 @@ public class PlayerMovement : MonoBehaviour
             yield return null;
         }
         rb.linearDamping = groundDrag;
+    }
+
+    private void SprintReset()
+    {
+        if (state == MovementState.sprint) return;
+        sprinting = false;
     }
 }

@@ -118,7 +118,6 @@ public class AIAttack : MonoBehaviour
                     agent.stoppingDistance = 0f;
                     break;
                 case AttackState.attack:
-                    agent.stoppingDistance = rightWeapon.rangedRange;
                     Attack();
                     break;
             }
@@ -131,18 +130,23 @@ public class AIAttack : MonoBehaviour
         switch (rightWeapon.weaponType)
         {
             case EnemyWeaponStats.Weapons.sword:
+                agent.stoppingDistance = rightWeapon.meleeRange;
                 SwordAttack();
                 break;
             case EnemyWeaponStats.Weapons.axe:
+                agent.stoppingDistance = rightWeapon.meleeRange;
                 AxeAttack();
                 break;
             case EnemyWeaponStats.Weapons.crossbow:
+                agent.stoppingDistance = rightWeapon.rangedRange;
                 CrossbowAttack();
                 break;
             case EnemyWeaponStats.Weapons.staff:
+                agent.stoppingDistance = rightWeapon.rangedRange;
                 StaffAttack();
                 break;
             case EnemyWeaponStats.Weapons.unarmed:
+                agent.stoppingDistance = rightWeapon.meleeRange;
                 UnarmedAttack();
                 break; 
         }
@@ -285,7 +289,7 @@ public class AIAttack : MonoBehaviour
                 animator.SetTrigger("ShieldBlock");
                 animator.SetBool("Blocking", true);
                 break;
-            case EnemyWeaponStats.Weapons.unarmed:
+            default:    // unarmed or missing reference
                 animator.SetTrigger("UnarmedAttack");
                 break;
         }

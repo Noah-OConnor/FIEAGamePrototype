@@ -67,14 +67,27 @@ public class AIMain : MonoBehaviour
         if (health <= 0)
         {
             currentState = AIState.dead;
+            aiAttack.DisableColliders();
         }
-        else if (CanSeePlayer() || IsPlayerInAlertRange() || hasDamageBeenTaken || hasPlayerShot || attacking)
+        else if ((!hasDamageBeenTaken && !hasPlayerShot) && attacking || CanSeePlayer() || IsPlayerInAlertRange())
         {
             currentState = AIState.attack;
 
             attacking = true;
             hasDamageBeenTaken = false;
             hasPlayerShot = false;
+        }
+        else if (hasDamageBeenTaken || hasPlayerShot)
+        {
+            currentState = AIState.attack;
+
+            attacking = true;
+            hasDamageBeenTaken = false;
+            hasPlayerShot = false;
+
+            aiAttack.SetLastKnownPlayerPosition(player.position);
+
+            agent.SetDestination(player.position);
         }
         else
         {
@@ -110,16 +123,18 @@ public class AIMain : MonoBehaviour
 
     public virtual void TakeDamage(float damage)
     {
+        if (health <= 0) return;
+
         health -= damage;
-        //print(damage + " damage taken. Current health: " + health);
-        OnDamageTaken();
+        hasDamageBeenTaken = true;
     }
 
     public virtual bool CanSeePlayer()
     {
         Vector3 toPlayer = player.position - transform.position;
         bool isPlayerInFront = Vector3.Angle(transform.forward, toPlayer) < sightAngle / 2;
-        return isPlayerInFront && toPlayer.sqrMagnitude <= Mathf.Pow(sightRange, 2);
+        bool isPlayerObstructed = Physics.Raycast(transform.position, toPlayer, out RaycastHit hit, sightRange) && hit.transform == player;
+        return isPlayerInFront && !isPlayerObstructed && toPlayer.sqrMagnitude <= Mathf.Pow(sightRange, 2);
     }
 
     public virtual bool IsPlayerInSightRange()
@@ -130,11 +145,6 @@ public class AIMain : MonoBehaviour
     public virtual bool IsPlayerInAlertRange()
     {
         return Vector3.SqrMagnitude(transform.position - player.transform.position) <= Mathf.Pow(alertRange, 2);
-    }
-
-    public virtual void OnDamageTaken()
-    {
-        hasDamageBeenTaken = true;
     }
 
     public virtual void OnPlayerShoot()

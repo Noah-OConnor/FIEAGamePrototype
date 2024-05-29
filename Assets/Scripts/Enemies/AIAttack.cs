@@ -1,20 +1,18 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using Unity.Services.Lobbies.Models;
 
 public class AIAttack : MonoBehaviour
 {
-    [SerializeField] protected float meleeRange = 2f;
     [SerializeField] protected float searchDuration = 10f;
     [SerializeField] protected float searchRadius = 5f;
     [SerializeField] protected float searchSpeed = 5f;
     [SerializeField] protected float chaseSpeed = 8f;
-    [SerializeField] protected float chaseRotationSpeed = 8f;
+    [SerializeField] protected float rotationSpeed = 8f;
 
+    protected float summonTimer = 0f;
+    protected float searchTime;
     protected Vector3 lastKnownPlayerPosition;
-
-    protected bool resetting = false;
     protected bool attacking = false;
 
     protected AIMain aiMain;
@@ -31,19 +29,10 @@ public class AIAttack : MonoBehaviour
         search
     }
 
-    [SerializeField] protected Weapons leftWeapon;
+    [SerializeField] protected EnemyWeaponStats leftWeapon;
     [SerializeField] protected Transform leftWeaponTransform;
-    [SerializeField] protected Weapons rightWeapon;
+    [SerializeField] protected EnemyWeaponStats rightWeapon;
     [SerializeField] protected Transform rightWeaponTransform;
-    protected enum Weapons
-    {
-        none,
-        shield,
-        sword,
-        axe,
-        crossbow,
-        staff
-    }
 
     protected virtual void OnEnable()
     {
@@ -52,26 +41,33 @@ public class AIAttack : MonoBehaviour
         agent = aiMain.GetAgent();
         player = aiMain.GetPlayer();
         currentState = AttackState.none;
+
+        animator.SetBool("Combat", true);
     }
 
     protected virtual void OnDisable()
     {
         currentState = AttackState.none;
         CancelInvoke(nameof(Chase));
+
+        animator.SetBool("Combat", false);
     }
 
     protected virtual void Update()
     {
         StateHandler();
+        summonTimer += Time.deltaTime;
     }
 
     protected virtual void StateHandler()
     {
         AttackState oldState = currentState;
 
-        if (IsPlayerInMeleeRange() || attacking)
+        if (IsPlayerInRange(rightWeapon.meleeRange) || IsPlayerInRange(rightWeapon.meleeRange) || attacking)
         {
             currentState = AttackState.attack;
+
+            FacePlayer();
         }
         else if (aiMain.CanSeePlayer() || aiMain.IsPlayerInAlertRange())
         {
@@ -84,6 +80,7 @@ public class AIAttack : MonoBehaviour
 
         if (oldState != currentState)
         {
+            animator.SetBool("Blocking", false);
             CancelInvoke(nameof(Chase));
             switch (currentState)
             {
@@ -92,14 +89,12 @@ public class AIAttack : MonoBehaviour
                     agent.stoppingDistance = 0f;
                     break;
                 case AttackState.search:
-                    lastKnownPlayerPosition = player.position;
                     StartCoroutine(SearchRoutine());
                     agent.stoppingDistance = 0f;
                     break;
                 case AttackState.attack:
-                    agent.stoppingDistance = meleeRange;
+                    agent.stoppingDistance = rightWeapon.meleeRange;
                     Attack();
-                    attacking = true;
                     break;
             }
         }
@@ -107,52 +102,164 @@ public class AIAttack : MonoBehaviour
 
     protected virtual void Attack()
     {
-        switch (leftWeapon)
+        attacking = true;
+        switch (rightWeapon.weaponType)
         {
-            case Weapons.shield:
-                // Shield attack logic
-                animator.SetTrigger("ShieldAttack");
+            case EnemyWeaponStats.Weapons.sword:
+                SwordAttack();
                 break;
-            case Weapons.sword:
-                // Sword attack logic
-                animator.SetTrigger("SwordAttack");
+            case EnemyWeaponStats.Weapons.axe:
+                AxeAttack();
                 break;
-            case Weapons.axe:
-                // Axe attack logic
-                animator.SetTrigger("AxeAttack");
+            case EnemyWeaponStats.Weapons.crossbow:
+                CrossbowAttack();
                 break;
+            case EnemyWeaponStats.Weapons.staff:
+                StaffAttack();
+                break;
+            case EnemyWeaponStats.Weapons.unarmed:
+                UnarmedAttack();
+                break; 
         }
 
-        switch (rightWeapon)
+        Invoke(nameof(ResetAttack), rightWeapon.cooldown);
+    }
+
+    protected virtual void SwordAttack()
+    {
+        switch (leftWeapon.weaponType)
         {
-            case Weapons.sword:
-                // Sword attack logic
-                animator.SetTrigger("SwordAttack");
+            case EnemyWeaponStats.Weapons.shield:
+                animator.SetTrigger("1HandMeleeAttack");
+                animator.SetBool("Blocking", true);
                 break;
-            case Weapons.axe:
-                // Axe attack logic
-                animator.SetTrigger("AxeAttack");
+            case EnemyWeaponStats.Weapons.sword:
+                animator.SetTrigger("DualMeleeAttack");
                 break;
-            case Weapons.crossbow:
-                // Crossbow attack logic
-                animator.SetTrigger("CrossbowAttack");
+            case EnemyWeaponStats.Weapons.axe:
+                animator.SetTrigger("DualMeleeAttack");
                 break;
-            case Weapons.staff:
-                // Staff attack logic
-                animator.SetTrigger("StaffAttack");
-                break;
-            default:
-                // Default attack logic
-                animator.SetTrigger("Attack");
+            default:    // unarmed or missing reference
+                animator.SetTrigger("2HandMeleeAttack");
                 break;
         }
+    }
 
-        Invoke(nameof(ResetAttack), 1.1f);
+    protected virtual void AxeAttack()
+    {
+        switch (leftWeapon.weaponType)
+        {
+            case EnemyWeaponStats.Weapons.shield:
+                animator.SetTrigger("1HandMeleeAttack");
+                animator.SetBool("Blocking", true);
+                break;
+            case EnemyWeaponStats.Weapons.sword:
+                animator.SetTrigger("DualMeleeAttack");
+                animator.SetTrigger("SwordAttack");
+                break;
+            case EnemyWeaponStats.Weapons.axe:
+                animator.SetTrigger("MeleeSpin");
+                break;
+            default:    // unarmed or missing reference
+                animator.SetTrigger("2HandMeleeAttack");
+                break;
+        }
+    }
+
+    protected virtual void CrossbowAttack()
+    {
+        switch (leftWeapon.weaponType)
+        {
+            case EnemyWeaponStats.Weapons.shield:
+                animator.SetTrigger("1HandCrossbowAttack");
+                animator.SetBool("Blocking", true);
+                break;
+            default:    // unarmed or missing reference
+                animator.SetTrigger("2HandCrossbowAttack");
+                break;
+        }
+    }
+
+    protected virtual void StaffAttack()
+    {
+        if (IsPlayerInRange(rightWeapon.meleeRange))
+        {
+            switch (leftWeapon.weaponType)
+            {
+                case EnemyWeaponStats.Weapons.shield:
+                    animator.SetTrigger("1HandMeleeAttack");
+                    animator.SetBool("Blocking", true);
+                    break;
+                default:    // unarmed or missing reference
+                    animator.SetTrigger("2HandMeleeAttack");
+                    break;
+            }
+
+        }
+        else if (summonTimer >= 10f * rightWeapon.cooldown)
+        {
+            summonTimer = 0f;
+
+            switch (leftWeapon.weaponType)
+            {
+                case EnemyWeaponStats.Weapons.shield:
+                    animator.SetTrigger("Summon");
+                    animator.SetBool("Blocking", true);
+                    break;
+                default:    // unarmed or missing reference
+                    animator.SetTrigger("Summon");
+                    break;
+            }
+        }
+        else
+        {
+            switch (leftWeapon.weaponType)
+            {
+                case EnemyWeaponStats.Weapons.shield:
+                    animator.SetTrigger("1HandStaffAttack");
+                    animator.SetBool("Blocking", true);
+                    break;
+                default:    // unarmed or missing reference
+                    animator.SetTrigger("1HandStaffAttack");
+                    break;
+            }
+        }
+    }
+
+    protected virtual void UnarmedAttack()
+    {
+        switch (leftWeapon.weaponType) 
+        {
+            case EnemyWeaponStats.Weapons.shield:
+                animator.SetTrigger("ShieldBashAttack");
+                animator.SetBool("Blocking", true);
+                break;
+            case EnemyWeaponStats.Weapons.unarmed:
+                animator.SetTrigger("UnarmedAttack");
+                break;
+        }
     }
 
     protected virtual void ResetAttack()
     {
         attacking = false;
+
+        if (IsPlayerInRange(rightWeapon.meleeRange) || IsPlayerInRange(rightWeapon.rangedRange))
+        {
+            Attack();
+        }
+    }
+    protected virtual void FacePlayer()
+    {
+        // Face the player
+        if (IsPlayerInRange(rightWeapon.meleeRange) || IsPlayerInRange(rightWeapon.rangedRange) || aiMain.CanSeePlayer())
+        {
+            Vector3 direction = (player.position - transform.position).normalized;
+            direction.y = 0;
+            Quaternion lookRotation = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
+            lastKnownPlayerPosition = player.position;
+        }
     }
 
     protected virtual void Chase()
@@ -160,12 +267,13 @@ public class AIAttack : MonoBehaviour
         if (currentState != AttackState.chase) return;
 
         agent.speed = chaseSpeed;
+        lastKnownPlayerPosition = player.position;
         agent.SetDestination(player.position);
     }
 
     protected virtual IEnumerator SearchRoutine()
     {
-        float searchTime = 0f;
+        searchTime = 0f;
         agent.speed = searchSpeed;
 
         // Move to the last known player position
@@ -179,7 +287,7 @@ public class AIAttack : MonoBehaviour
             }
 
             // If the enemy has reached the last known player position, make it wander around that position
-            if (agent.remainingDistance < 0.5f)
+            if (agent.remainingDistance < 0.1f)
             {
                 Vector3 randomDirection = Random.insideUnitSphere * searchRadius;
                 randomDirection += lastKnownPlayerPosition;
@@ -195,8 +303,20 @@ public class AIAttack : MonoBehaviour
         aiMain.SetAttacking(false);
     }
 
-    public virtual bool IsPlayerInMeleeRange()
+    public virtual bool IsPlayerInRange(float range)
     {
-        return Vector3.SqrMagnitude(transform.position - player.position) <= Mathf.Pow(meleeRange, 2);
+        return Vector3.SqrMagnitude(transform.position - player.position) <= Mathf.Pow(range, 2);
+    }
+
+    public virtual void SetLastKnownPlayerPosition(Vector3 position)
+    {
+        lastKnownPlayerPosition = position;
+        searchTime = 0f;
+    }
+
+    public virtual void DisableColliders()
+    {
+        rightWeaponTransform.GetComponent<Collider>().enabled = false;
+        leftWeaponTransform.GetComponent<Collider>().enabled = false;
     }
 }

@@ -30,9 +30,12 @@ public class AIAttack : MonoBehaviour
     }
 
     [SerializeField] protected EnemyWeaponStats rightWeapon;
-    [SerializeField] protected Transform rightWeaponTransform;
     [SerializeField] protected EnemyWeaponStats leftWeapon;
-    [SerializeField] protected Transform leftWeaponTransform;
+
+    [SerializeField] protected Transform arrowSpawnTransform;
+    [SerializeField] protected Transform arrowPrefab;
+    [SerializeField] protected Transform magicSpawnTransform;
+    [SerializeField] protected Transform magicPrefab;
 
     [SerializeField] protected EnemyWeaponStats unarmedWeapon;
 
@@ -61,6 +64,9 @@ public class AIAttack : MonoBehaviour
     {
         currentState = AttackState.none;
         CancelInvoke(nameof(Chase));
+        CancelInvoke(nameof(SpinMove));
+        CancelInvoke(nameof(ShootCrossbow));
+        CancelInvoke(nameof(ShootMagic));
 
         animator.SetBool("Combat", false);
     }
@@ -220,15 +226,33 @@ public class AIAttack : MonoBehaviour
             switch (leftWeapon.weaponType)
             {
                 case EnemyWeaponStats.Weapons.shield:
+                    Invoke(nameof(ShootCrossbow), 0.3f);
                     animator.SetTrigger("1HandCrossbowAttack");
                     animator.SetTrigger("ShieldBlock");
                     animator.SetBool("Blocking", true);
                     break;
                 default:    // unarmed or missing reference
+                    Invoke(nameof(ShootCrossbow), 0.3f);
                     animator.SetTrigger("2HandCrossbowAttack");
                     break;
             }
         }
+    }
+
+    protected virtual void ShootCrossbow()
+    {
+        if (currentState != AttackState.attack) return;
+        // Instantiate the bolt at the crossbow's position
+        Transform arrowTransform = Instantiate(arrowPrefab, arrowSpawnTransform.position, Quaternion.identity);
+
+        // Calculate the direction towards the player
+        Vector3 direction = (player.position + new Vector3(0, 1, 0) - arrowSpawnTransform.position).normalized;
+
+        // Rotate the arrow to face the player
+        arrowTransform.rotation = Quaternion.LookRotation(direction);
+
+        // Apply a forward force to the bolt
+        arrowTransform.GetComponent<Rigidbody>().AddForce(direction * rightWeapon.projectileSpeed, ForceMode.Impulse);
     }
 
     protected virtual void StaffAttack()
@@ -269,15 +293,24 @@ public class AIAttack : MonoBehaviour
             switch (leftWeapon.weaponType)
             {
                 case EnemyWeaponStats.Weapons.shield:
+                    Invoke(nameof(ShootMagic), 0.3f);
                     animator.SetTrigger("1HandStaffAttack");
                     animator.SetTrigger("ShieldBlock");
                     animator.SetBool("Blocking", true);
                     break;
                 default:    // unarmed or missing reference
+                    Invoke(nameof(ShootMagic), 0.3f);
                     animator.SetTrigger("1HandStaffAttack");
                     break;
             }
         }
+    }
+
+    protected virtual void ShootMagic()
+    {
+        if (currentState != AttackState.attack) return;
+        Transform magicTransform = Instantiate(magicPrefab, magicSpawnTransform.position, Quaternion.identity);
+        magicTransform.GetComponent<EnemyMagic>().SetPlayerTransform(player);
     }
 
     protected virtual void UnarmedAttack()
@@ -380,7 +413,7 @@ public class AIAttack : MonoBehaviour
 
     public virtual void DisableColliders()
     {
-        rightWeaponTransform.GetComponent<Collider>().enabled = false;
-        leftWeaponTransform.GetComponent<Collider>().enabled = false;
+        //rightWeaponTransform.GetComponent<Collider>().enabled = false;
+        //leftWeaponTransform.GetComponent<Collider>().enabled = false;
     }
 }

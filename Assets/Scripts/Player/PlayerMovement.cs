@@ -11,14 +11,21 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float sprintSpeed = 10f;
     [SerializeField] private float groundDrag = 1f;
+    [SerializeField] private float airMultiplier;
     [SerializeField] private bool sprinting = false;
     private float desiredMoveSpeed;
 
     [Header("Jump Settings")]
     [SerializeField] private float jumpForce = 5f;
     [SerializeField] private float jumpCooldown;
-    [SerializeField] private float airMultiplier;
     private bool canJump = true;
+
+    [Header("Dash Settings")]
+    [SerializeField] private float dashForce = 5f;
+    [SerializeField] private float dashTime = 0.5f;
+    [SerializeField] private float dashCooldown;
+    private bool dashing = false;
+    private bool canDash = true;
 
     [Header("Ground Check Settings")]
     [SerializeField] private LayerMask groundLayers;
@@ -60,6 +67,7 @@ public class PlayerMovement : MonoBehaviour
         StateHandler();
         HandleMisc();
         HandleJump();
+        HandleDash();
 
         flatSpeed = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z).magnitude;
 
@@ -171,7 +179,7 @@ public class PlayerMovement : MonoBehaviour
         movement = input.y * transform.forward + input.x * transform.right;
         movement.Normalize();
 
-        if (isGrounded && canJump)
+        if ((isGrounded && canJump) || dashing)
         {
             useGravity = false;
             //rb.linearDamping = 10f;
@@ -181,6 +189,8 @@ public class PlayerMovement : MonoBehaviour
             //rb.linearDamping = 0f;
             useGravity = true;
         }
+
+        if (dashing) return;
 
         if (OnSlope() && !exitingSlope)
         {
@@ -208,6 +218,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void SpeedControl()
     {
+        if (dashing)
+        {
+            moveSpeed = dashForce;
+        }
+        
         if (OnSlope() && !exitingSlope)      // limiting speed on slopes
         {
             if (rb.linearVelocity.magnitude > moveSpeed)
@@ -241,7 +256,7 @@ public class PlayerMovement : MonoBehaviour
         {
             exitingSlope = true;
             canJump = false;
-            Invoke(nameof(JumpReset), 0.7f);
+            Invoke(nameof(JumpReset), jumpCooldown);
 
             // reset y velocity
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
@@ -259,12 +274,52 @@ public class PlayerMovement : MonoBehaviour
         exitingSlope = false;
     }
 
+    private void HandleDash()
+    {
+        if (canDash && InputManager.instance.DashHeld)
+        {
+            dashing = true;
+            exitingSlope = true;
+            canDash = false;
+            Invoke(nameof(DashReset), dashCooldown);
+            Invoke(nameof(EndDash), dashTime);
+
+            // reset y velocity
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+
+            increaseDragGradually = false;
+            rb.linearDamping = 0;
+
+            Vector3 dashDirection = movement.normalized;
+
+            if (dashDirection == Vector3.zero)
+            {
+                dashDirection = transform.forward;
+            }
+
+            rb.AddForce(dashDirection * dashForce, ForceMode.Impulse);
+        }
+    }
+
+    private void EndDash()
+    {
+        dashing = false;
+        exitingSlope = false;
+        moveSpeed = walkSpeed;
+        rb.linearDamping = groundDrag;
+    }
+
+    private void DashReset()
+    {
+        canDash = true;
+        exitingSlope = false;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         // Check if the collision is with the ground
         if (collision.gameObject.CompareTag("Ground"))
         {
-            //canJump = true;
             StartCoroutine(IncreaseDragGradually());
         }
     }

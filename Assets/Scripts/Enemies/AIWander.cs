@@ -25,6 +25,27 @@ public class AIWander : MonoBehaviour
         wanderRoutine = StartCoroutine(WanderRoutine());
     }
 
+    //protected virtual void Update()
+    //{
+    //    if (agent.velocity.magnitude < 0.05f) 
+    //    {
+    //        animator.SetFloat("Strafe", 0);
+    //        animator.SetFloat("Forward", 0);
+    //        return;
+    //    }
+
+    //    Vector3 movementDirection = agent.velocity.normalized;
+    //    float strafe = Vector3.Dot(transform.right, movementDirection) * agent.velocity.magnitude;
+    //    float forward = Vector3.Dot(transform.forward, movementDirection * agent.velocity.magnitude);
+
+    //    animator.SetFloat("Strafe", Mathf.Lerp(animator.GetFloat("Strafe"), strafe, 0.05f));
+    //    animator.SetFloat("Forward", Mathf.Lerp(animator.GetFloat("Forward"), forward, 0.05f));
+    //    Quaternion newRotation = Quaternion.LookRotation(agent.velocity.normalized, Vector3.up);
+        
+    //    // lerp from current rotation to new rotation
+    //    transform.rotation = Quaternion.Lerp(transform.rotation, newRotation, Time.deltaTime * aiMain.GetRotationSpeed());
+    //}
+
     protected virtual void OnDisable()
     {
         if (wanderRoutine != null)

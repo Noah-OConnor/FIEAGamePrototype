@@ -180,6 +180,11 @@ public class AIMain : MonoBehaviour
         return currentState;
     }
 
+    //public float GetRotationSpeed()
+    //{
+    //    return rotationSpeed;
+    //}
+
     public virtual void SetAttacking(bool value)
     {
         attacking = value;

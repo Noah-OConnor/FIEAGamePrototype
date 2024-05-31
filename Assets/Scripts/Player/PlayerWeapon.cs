@@ -29,12 +29,13 @@ public class PlayerWeapon : MonoBehaviour
     private Vector3 mouseWorldPosition;
     private Vector3 cameraPosition;
 
-    public static event Action OnPlayerShoot;
+    private PlayerEvents playerEvents;
 
     private void Start()
     {
         currentAmmo = magazineCapacity;
         cameraPosition = Camera.main.transform.position;
+        playerEvents = GetComponent<PlayerEvents>();
     }
 
     private void Update()
@@ -71,9 +72,10 @@ public class PlayerWeapon : MonoBehaviour
 
         // Reduce the current ammo
         currentAmmo--;
+        playerEvents.TriggerOnPlayerAmmoChanged(currentAmmo, magazineCapacity);
 
         // Trigger the OnPlayerShoot event
-        OnPlayerShoot?.Invoke();
+        playerEvents.TriggerOnPlayerShoot();
 
         // Set the weapon to ready to shoot after the fire rate
         Invoke("ResetReadyToShoot", 60f / fireRate);
@@ -147,6 +149,7 @@ public class PlayerWeapon : MonoBehaviour
         if (InputManager.instance.ReloadPressed)
         {
             currentAmmo = magazineCapacity;
+            playerEvents.TriggerOnPlayerAmmoChanged(currentAmmo, magazineCapacity);
         }
     }
 

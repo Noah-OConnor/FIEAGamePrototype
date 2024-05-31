@@ -1,4 +1,3 @@
-using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -35,6 +34,8 @@ public class AIMain : MonoBehaviour
     // References
     protected Transform player;
 
+    protected PlayerEvents playerEvents;
+
     [SerializeField] protected AIState currentState = AIState.idle;
     public enum AIState
     {
@@ -60,7 +61,8 @@ public class AIMain : MonoBehaviour
     {
         if (GameManager.instance == null) return;
         player = GameManager.instance.playerTransforms[0];
-        PlayerWeapon.OnPlayerShoot += OnPlayerShoot;
+        playerEvents = player.GetComponent<PlayerEvents>();
+        playerEvents.onPlayerShoot += OnPlayerShoot;
     }
 
     protected virtual void Update()

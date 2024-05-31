@@ -4,6 +4,7 @@ public class EnemyMagic : MonoBehaviour
 {
     public float speed = 10f;
     public float turnSpeed = 200f; // degrees per second
+    public float knockbackForce = 10f;
     private Rigidbody rb;
     private Transform playerTransform;
 
@@ -39,14 +40,21 @@ public class EnemyMagic : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("Player hit by magic");
+            other.GetComponentInParent<PlayerHealth>().TakeDamage(1, transform, transform.forward, knockbackForce);
+            //Debug.Log("Player hit by magic");
+        }
+        else if (other.CompareTag("Enemy"))
+        {
+            return;
         }
         MyDestroy();
     }
 
     private void MyDestroy()
     {
+        // spawn hit vfx
         GetComponent<Collider>().enabled = false;
+        GetComponent<MeshRenderer>().enabled = false;
         rb.isKinematic = true;
         Destroy(gameObject, 2f);
     }

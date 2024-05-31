@@ -17,5 +17,5 @@ MonoBehaviour:
   meleeRange: 2
   rangedRange: 15
   projectileSpeed: 15
-  cooldown: 2.5
+  cooldown: 3
   knockback: 1

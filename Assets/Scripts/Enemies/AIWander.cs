@@ -19,6 +19,7 @@ public class AIWander : MonoBehaviour
         aiMain = GetComponent<AIMain>();
         agent = aiMain.GetAgent();
         animator = aiMain.GetAnimator();
+        agent.enabled = true;
         agent.speed = wanderSpeed;
         agent.stoppingDistance = 0f;
 

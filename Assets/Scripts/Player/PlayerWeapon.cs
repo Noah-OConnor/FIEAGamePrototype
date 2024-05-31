@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using System;
 
 public class PlayerWeapon : MonoBehaviour
 {
@@ -27,6 +28,8 @@ public class PlayerWeapon : MonoBehaviour
     private bool readyToShoot = true;
     private Vector3 mouseWorldPosition;
     private Vector3 cameraPosition;
+
+    public static event Action OnPlayerShoot;
 
     private void Start()
     {
@@ -68,6 +71,9 @@ public class PlayerWeapon : MonoBehaviour
 
         // Reduce the current ammo
         currentAmmo--;
+
+        // Trigger the OnPlayerShoot event
+        OnPlayerShoot?.Invoke();
 
         // Set the weapon to ready to shoot after the fire rate
         Invoke("ResetReadyToShoot", 60f / fireRate);

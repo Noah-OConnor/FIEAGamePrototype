@@ -1,8 +1,5 @@
 using System.Collections;
-using System.Collections.Generic;
-using Unity.Services.Lobbies.Models;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -36,6 +33,7 @@ public class PlayerMovement : MonoBehaviour
     private RaycastHit slopeHit;
     private bool exitingSlope;
 
+    private bool knockbacking = false;
     private float currentSpeed;
     private bool useGravity = false;
     private bool increaseDragGradually = false;
@@ -58,6 +56,12 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        GameManager.instance.AddPlayerTransform(transform);
+    }
+
+    private void OnDestroy()
+    {
+        GameManager.instance.RemovePlayerTransform(transform);
     }
 
     private void Update()
@@ -179,7 +183,7 @@ public class PlayerMovement : MonoBehaviour
         movement = input.y * transform.forward + input.x * transform.right;
         movement.Normalize();
 
-        if ((isGrounded && canJump) || dashing)
+        if ((isGrounded && canJump) || dashing || knockbacking)
         {
             useGravity = false;
             //rb.linearDamping = 10f;
@@ -190,7 +194,7 @@ public class PlayerMovement : MonoBehaviour
             useGravity = true;
         }
 
-        if (dashing) return;
+        if (dashing || knockbacking) return;
 
         if (OnSlope() && !exitingSlope)
         {
@@ -218,7 +222,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void SpeedControl()
     {
-        if (dashing)
+        if (dashing || knockbacking)
         {
             moveSpeed = dashForce;
         }
@@ -313,6 +317,26 @@ public class PlayerMovement : MonoBehaviour
     {
         canDash = true;
         exitingSlope = false;
+    }
+
+    public void KnockbackPlayer(Vector3 knockbackDirection, float knockbackForce)
+    {
+        knockbacking = true;
+        increaseDragGradually = false;
+        rb.linearDamping = 0;
+        exitingSlope = true;
+
+        Invoke(nameof(EndKnockback), dashTime);
+
+        rb.AddForce(knockbackDirection * knockbackForce, ForceMode.Impulse);
+    }
+
+    private void EndKnockback()
+    {
+        knockbacking = false;
+        exitingSlope = false;
+        moveSpeed = walkSpeed;
+        rb.linearDamping = groundDrag;
     }
 
     private void OnCollisionEnter(Collision collision)

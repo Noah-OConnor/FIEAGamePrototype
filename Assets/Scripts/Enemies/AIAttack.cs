@@ -36,6 +36,7 @@ public class AIAttack : MonoBehaviour
     [SerializeField] protected Transform arrowPrefab;
     [SerializeField] protected Transform magicSpawnTransform;
     [SerializeField] protected Transform magicPrefab;
+    [SerializeField] protected Transform minionPrefab;
 
     [SerializeField] protected EnemyWeaponStats unarmedWeapon;
 
@@ -44,6 +45,7 @@ public class AIAttack : MonoBehaviour
         aiMain = GetComponent<AIMain>();
         animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
+        agent.enabled = true;
         player = aiMain.GetPlayer();
         currentState = AttackState.none;
 
@@ -81,7 +83,7 @@ public class AIAttack : MonoBehaviour
     {
         AttackState oldState = currentState;
 
-        if (IsPlayerInRange(rightWeapon.rangedRange) || IsPlayerInRange(rightWeapon.meleeRange) || attacking)
+        if (aiMain.CanSeePlayer() && (IsPlayerInRange(rightWeapon.rangedRange) || IsPlayerInRange(rightWeapon.meleeRange)) || attacking)
         {
             currentState = AttackState.attack;
 
@@ -242,16 +244,11 @@ public class AIAttack : MonoBehaviour
     protected virtual void ShootCrossbow()
     {
         if (currentState != AttackState.attack) return;
-        // Instantiate the bolt at the crossbow's position
-        Transform arrowTransform = Instantiate(arrowPrefab, arrowSpawnTransform.position, Quaternion.identity);
 
-        // Calculate the direction towards the player
+        Transform arrowTransform = Instantiate(arrowPrefab, arrowSpawnTransform.position, Quaternion.identity);
         Vector3 direction = (player.position + new Vector3(0, 1, 0) - arrowSpawnTransform.position).normalized;
 
-        // Rotate the arrow to face the player
         arrowTransform.rotation = Quaternion.LookRotation(direction);
-
-        // Apply a forward force to the bolt
         arrowTransform.GetComponent<Rigidbody>().AddForce(direction * rightWeapon.projectileSpeed, ForceMode.Impulse);
     }
 
@@ -272,18 +269,20 @@ public class AIAttack : MonoBehaviour
             }
 
         }
-        else if (summonTimer >= 10f * rightWeapon.cooldown)
+        else if (summonTimer >= 8 * rightWeapon.cooldown)
         {
             summonTimer = 0f;
 
             switch (leftWeapon.weaponType)
             {
                 case EnemyWeaponStats.Weapons.shield:
+                    SummonMinion();
                     animator.SetTrigger("Summon");
                     animator.SetTrigger("ShieldBlock");
                     animator.SetBool("Blocking", true);
                     break;
                 default:    // unarmed or missing reference
+                    SummonMinion();
                     animator.SetTrigger("Summon");
                     break;
             }
@@ -303,6 +302,32 @@ public class AIAttack : MonoBehaviour
                     animator.SetTrigger("1HandStaffAttack");
                     break;
             }
+        }
+    }
+
+    protected virtual void SummonMinion()
+    {
+        // Instantiate the minion in front of the enemy
+        Transform minionTransform = Instantiate(minionPrefab, transform.position + (transform.forward * 2f) - (transform.up * 2f), transform.rotation);
+        minionTransform.GetComponent<AIMain>().SetStunned(3.5f);
+        minionTransform.GetComponent<AIMain>().SetAttacking(true);
+        minionTransform.GetComponent<NavMeshAgent>().enabled = false;
+        minionTransform.GetComponent<Animator>().SetTrigger("SummonMinion");
+        minionTransform.GetComponent<AIAttack>().SetLastKnownPlayerPosition(player.position);
+        StartCoroutine(RaiseMinion(minionTransform));
+    }
+
+    protected virtual IEnumerator RaiseMinion(Transform minion)
+    {
+        float timer = 0f;
+        Vector3 startPosition = minion.position;
+        Vector3 endPosition = minion.position + (transform.up * 2f);
+        while (true) 
+        {
+            timer += Time.deltaTime;
+            minion.position = Vector3.Lerp(startPosition, endPosition, timer / 0.2f);
+            if (timer >= 0.2f) break;
+            yield return null;
         }
     }
 
@@ -332,7 +357,7 @@ public class AIAttack : MonoBehaviour
     {
         attacking = false;
 
-        if (IsPlayerInRange(rightWeapon.meleeRange) || IsPlayerInRange(rightWeapon.rangedRange))
+        if (aiMain.CanSeePlayer() && (IsPlayerInRange(rightWeapon.meleeRange) || IsPlayerInRange(rightWeapon.rangedRange)))
         {
             Attack();
         }

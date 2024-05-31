@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 7504368712761728683}
   m_Layer: 0
   m_Name: Skeleton_Sword
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -107,8 +107,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 0.5726519, y: 0.8456099, z: 0.22225028}
-  m_Center: {x: -0.000012168646, y: 0.7449598, z: -0.000000059604645}
+  m_Size: {x: 0.5726519, y: 1.0826453, z: 0.22225028}
+  m_Center: {x: -0.000011867847, y: 0.863473, z: -0.000000059604645}
 --- !u!114 &7504368712761728683
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -14,7 +14,9 @@ public class AIDead : MonoBehaviour
         animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
 
-        agent.SetDestination(transform.position);
+        //agent.SetDestination(transform.position);
+        agent.enabled = false;
+
 
         animator.SetBool("Dead", true);
         StartCoroutine(LerpSpeedToZero());

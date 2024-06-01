@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.UIElements;
@@ -16,6 +17,8 @@ public class PlayerWeapon : NetworkBehaviour
     [SerializeField] private Transform currentProjectilePrefab;
     [SerializeField] private Transform projectileSpawnTransform;
 
+    [SerializeField] private Transform fakeProjectilePrefab;
+
     [SerializeField] private GameObject weaponMeshParent;
 
     [Header("Settings")]
@@ -27,13 +30,6 @@ public class PlayerWeapon : NetworkBehaviour
     private Vector3 cameraPosition;
 
     private PlayerEvents playerEvents;
-
-    private NetworkVariable<Vector3> aimDirection = new NetworkVariable<Vector3>(default,
-        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<Vector3> initialPosition = new NetworkVariable<Vector3>(default,
-        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> isWithinMaxAngle = new NetworkVariable<bool>(default,
-        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     private void Start()
     {
@@ -67,26 +63,27 @@ public class PlayerWeapon : NetworkBehaviour
         }
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnFakeProjectileServerRpc(Vector3 aimDirection, Vector3 initialPosition, float bulletSpeed, ulong ownerId)
+    {
+        Transform fakeProjectile = Instantiate(fakeProjectilePrefab, initialPosition, Quaternion.identity);
+        fakeProjectile.GetComponent<FakeProjectile>().Initialize(aimDirection, initialPosition, bulletSpeed);
+        fakeProjectile.GetComponent<NetworkObject>().SpawnWithOwnership(ownerId);
+    }
+
     private void Shoot()
     {
-        aimDirection.Value = (mouseWorldPosition - projectileSpawnTransform.position).normalized;
-        float angle = Vector3.Angle(aimDirection.Value, transform.forward);
-        isWithinMaxAngle.Value = Mathf.Abs(angle) < maxBulletAngle;
+        Vector3 aimDirection = (mouseWorldPosition - projectileSpawnTransform.position).normalized;
+        float angle = Vector3.Angle(aimDirection, transform.forward);
+        bool isWithinMaxAngle = Mathf.Abs(angle) < maxBulletAngle;
 
-        initialPosition.Value = isWithinMaxAngle.Value ? projectileSpawnTransform.position : cameraPosition;
-        aimDirection.Value = isWithinMaxAngle.Value ? aimDirection.Value : (mouseWorldPosition - cameraPosition).normalized;
+        Vector3 initialPosition = isWithinMaxAngle ? projectileSpawnTransform.position : cameraPosition;
+        aimDirection = isWithinMaxAngle ? aimDirection : (mouseWorldPosition - cameraPosition).normalized;
 
-        // Start a coroutine to delay the bullet's impact
-        if (!IsHost)
-        { 
-            Transform testProjectile = Instantiate(currentProjectilePrefab, initialPosition.Value, Quaternion.identity);
-            testProjectile.GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.Singleton.LocalClientId, true);
-            testProjectile.GetComponent<TestProjectile>().Initialize(aimDirection.Value, initialPosition.Value, isWithinMaxAngle.Value);
-        }
-        else
-        {
-            //SpawnBulletServerRpc();
-        }
+        Transform projectileTransform = Instantiate(currentProjectilePrefab, initialPosition, Quaternion.identity);
+        projectileTransform.GetComponent<TestProjectile>().Initialize(aimDirection, initialPosition, isWithinMaxAngle);
+
+        SpawnFakeProjectileServerRpc(aimDirection, initialPosition, projectileTransform.GetComponent<TestProjectile>().bulletSpeed, OwnerClientId);
 
         // Reduce the current ammo
         currentAmmo--;
@@ -97,15 +94,6 @@ public class PlayerWeapon : NetworkBehaviour
 
         // Set the weapon to ready to shoot after the fire rate
         Invoke("ResetReadyToShoot", 60f / fireRate);
-    }
-
-    [ServerRpc]
-    private void SpawnBulletServerRpc()
-    {
-        // Start a coroutine to delay the bullet's impact
-        Transform testProjectile = Instantiate(currentProjectilePrefab, initialPosition.Value, Quaternion.identity);
-        testProjectile.GetComponent<NetworkObject>().Spawn(true);
-        testProjectile.GetComponent<TestProjectile>().Initialize(aimDirection.Value, initialPosition.Value, isWithinMaxAngle.Value);
     }
 
     private void ResetReadyToShoot()

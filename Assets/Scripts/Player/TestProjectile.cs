@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using Unity.Netcode;
 
-public class TestProjectile : MonoBehaviour
+public class TestProjectile : NetworkBehaviour
 {
     public float bulletSpeed = 10f;
     public float maxBulletRange = 100f;
@@ -17,13 +17,13 @@ public class TestProjectile : MonoBehaviour
     private Vector3 initialPosition;
     private bool isWithinMaxAngle;
 
+    [SerializeField] private Transform fakeProjectilePrefab;
+
     public void Initialize(Vector3 aimDirection, Vector3 initialPosition, bool isWithinMaxAngle)
     {
         this.aimDirection = aimDirection;
         this.initialPosition = initialPosition;
         this.isWithinMaxAngle = isWithinMaxAngle;
-
-        //print ("aimDirection: " + aimDirection + " | initialPosition: " + initialPosition + " | bool: " + isWithinMaxAngle);
 
         StartCoroutine(BulletImpactDelay());
     }
@@ -36,7 +36,6 @@ public class TestProjectile : MonoBehaviour
 
         if (isWithinMaxAngle)
         {
-
             trailRenderer.enabled = true;
             transform.forward = aimDirection;
         }
@@ -71,9 +70,8 @@ public class TestProjectile : MonoBehaviour
                     // spawn hit effect
                     Instantiate(hitEffectRedPrefab, hit.point, Quaternion.identity);
                 }
-
-                if (isWithinMaxAngle) trailRenderer.enabled = true;
-
+                
+                Destroy(gameObject, 0.1f);
                 break;
             }
             // if the raycast didn't hit anything, move the projectile forward

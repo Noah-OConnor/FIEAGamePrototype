@@ -1,17 +1,30 @@
 using UnityEngine;
+using Unity.Cinemachine;
+using Unity.Netcode;
 
-public class PlayerCamera : MonoBehaviour
+public class PlayerCamera : NetworkBehaviour
 {
     private float lookSpeed = 10f;
     private Vector2 currentLook;
     private Vector2 lookInput;
     [SerializeField] private Transform cineCamera;
+    [SerializeField] private Camera FirstPersonCamera;
+    [SerializeField] private Camera DamageNumbersCamera;
     [SerializeField] private Vector2 lookLimits = new Vector2(-90f, 90f);
     [SerializeField] private float smoothTime = 0.3F; // the time it will take to reach the target
     private Vector3 velocity = Vector3.zero; // the current velocity, this value is modified by the function every time you call it
 
+    public override void OnNetworkSpawn()
+    {
+        if (!IsOwner) return;
+        cineCamera.GetComponent<CinemachineCamera>().enabled = true;
+        FirstPersonCamera.enabled = true;
+        DamageNumbersCamera.enabled = true;
+    }
+
     private void LateUpdate()
     {
+        if (!IsOwner) return;
         // Get the look input from the InputManager
         lookInput = InputManager.instance.Look;
 

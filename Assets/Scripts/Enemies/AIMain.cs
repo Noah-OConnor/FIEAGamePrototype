@@ -60,7 +60,7 @@ public class AIMain : MonoBehaviour
     protected virtual void Start()
     {
         if (GameManager.instance == null) return;
-        player = GameManager.instance.playerTransforms[0];
+        //player = GameManager.instance.playerTransforms[0];
         playerEvents = player.GetComponent<PlayerEvents>();
         playerEvents.onPlayerShoot += OnPlayerShoot;
     }

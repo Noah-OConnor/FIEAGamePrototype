@@ -1,13 +1,11 @@
 using System.Collections;
 using UnityEngine;
-using System;
+using Unity.Netcode;
+using UnityEngine.UIElements;
 
-public class PlayerWeapon : MonoBehaviour
+public class PlayerWeapon : NetworkBehaviour
 {
     [Header("Stats")]
-    [SerializeField] private float maxBulletRange = 100f;
-    [SerializeField] private float bulletSpeed = 10f;
-    [SerializeField] private int bulletDamage = 10;
     [SerializeField] private int magazineCapacity = 30;
     [SerializeField] private float fireRate = 100f;
 
@@ -17,9 +15,8 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private Transform debugTransform;
     [SerializeField] private Transform currentProjectilePrefab;
     [SerializeField] private Transform projectileSpawnTransform;
-    [SerializeField] private Transform floatingNumberPrefab;
-    [SerializeField] private Transform hitEffectGreenPrefab;
-    [SerializeField] private Transform hitEffectRedPrefab;
+
+    [SerializeField] private GameObject weaponMeshParent;
 
     [Header("Settings")]
     [SerializeField] private LayerMask aimColliderLayerMask;
@@ -31,6 +28,13 @@ public class PlayerWeapon : MonoBehaviour
 
     private PlayerEvents playerEvents;
 
+    private NetworkVariable<Vector3> aimDirection = new NetworkVariable<Vector3>(default,
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<Vector3> initialPosition = new NetworkVariable<Vector3>(default,
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> isWithinMaxAngle = new NetworkVariable<bool>(default,
+        NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     private void Start()
     {
         currentAmmo = magazineCapacity;
@@ -38,8 +42,15 @@ public class PlayerWeapon : MonoBehaviour
         playerEvents = GetComponent<PlayerEvents>();
     }
 
+    public override void OnNetworkSpawn()
+    {
+        if (!IsOwner) return;
+        weaponMeshParent.SetActive(true);
+    }
+
     private void Update()
     {
+        if (!IsOwner) return;
         HandleWeaponPrimary();
         DebugRayCast();
         HandleReload();
@@ -52,23 +63,30 @@ public class PlayerWeapon : MonoBehaviour
         {
             // Call the Shoot method directly
             Shoot();
+            readyToShoot = false;
         }
     }
 
     private void Shoot()
     {
-        // Set the weapon to not ready to shoot
-        readyToShoot = false;
+        aimDirection.Value = (mouseWorldPosition - projectileSpawnTransform.position).normalized;
+        float angle = Vector3.Angle(aimDirection.Value, transform.forward);
+        isWithinMaxAngle.Value = Mathf.Abs(angle) < maxBulletAngle;
 
-        Vector3 aimDirection = (mouseWorldPosition - projectileSpawnTransform.position).normalized;
-        float angle = Vector3.Angle(aimDirection, transform.forward);
-        bool isWithinMaxAngle = Mathf.Abs(angle) < maxBulletAngle;
-
-        Vector3 initialPosition = isWithinMaxAngle ? projectileSpawnTransform.position : cameraPosition;
-        aimDirection = isWithinMaxAngle ? aimDirection : (mouseWorldPosition - cameraPosition).normalized;
+        initialPosition.Value = isWithinMaxAngle.Value ? projectileSpawnTransform.position : cameraPosition;
+        aimDirection.Value = isWithinMaxAngle.Value ? aimDirection.Value : (mouseWorldPosition - cameraPosition).normalized;
 
         // Start a coroutine to delay the bullet's impact
-        StartCoroutine(BulletImpactDelay(aimDirection, initialPosition, isWithinMaxAngle));
+        if (!IsHost)
+        { 
+            Transform testProjectile = Instantiate(currentProjectilePrefab, initialPosition.Value, Quaternion.identity);
+            testProjectile.GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.Singleton.LocalClientId, true);
+            testProjectile.GetComponent<TestProjectile>().Initialize(aimDirection.Value, initialPosition.Value, isWithinMaxAngle.Value);
+        }
+        else
+        {
+            //SpawnBulletServerRpc();
+        }
 
         // Reduce the current ammo
         currentAmmo--;
@@ -81,62 +99,13 @@ public class PlayerWeapon : MonoBehaviour
         Invoke("ResetReadyToShoot", 60f / fireRate);
     }
 
-    private IEnumerator BulletImpactDelay(Vector3 aimDirection, Vector3 initialPosition, bool isWithinMaxAngle)
+    [ServerRpc]
+    private void SpawnBulletServerRpc()
     {
-        //print(isWithinMaxAngle);
-        float totalDistance = 0;
-
-        Vector3 projectilePosition = initialPosition;
-
-        Transform bulletTransform = null;
-
-        if (isWithinMaxAngle)
-        {
-            bulletTransform = Instantiate(currentProjectilePrefab, projectilePosition, Quaternion.identity);
-            // rotate the bullet to face the direction it's moving
-            bulletTransform.forward = aimDirection;
-        }
-
-        while (totalDistance < maxBulletRange)
-        {
-            float travelDistance = isWithinMaxAngle ? bulletSpeed * Time.deltaTime : bulletSpeed * Time.deltaTime * 5;
-            totalDistance += travelDistance;
-
-            if (bulletTransform != null)
-            {
-                // Move the debug object to the projectile's position
-                bulletTransform.position = projectilePosition;
-            }
-
-            if (Physics.Raycast(projectilePosition, aimDirection, out RaycastHit hit, travelDistance, aimColliderLayerMask))
-            {
-                // Check if the raycast hit an enemy
-                if (hit.collider.gameObject.CompareTag("Enemy"))
-                {
-                    // Apply damage to the enemy
-                    hit.collider.gameObject.GetComponent<EnemyCollider>().TakeDamage(bulletDamage);
-
-                    // spawn damage number
-                    Transform floatingNumber = Instantiate(floatingNumberPrefab, hit.point, Quaternion.identity);
-                    floatingNumber.GetComponent<FloatingNumber>().SetNumber((int)bulletDamage);
-                    // spawn hit enemy effect
-                    Instantiate(hitEffectGreenPrefab, hit.point, Quaternion.identity);
-                }
-                else
-                {
-                    // spawn hit effect
-                    Instantiate(hitEffectRedPrefab, hit.point, Quaternion.identity);
-                }
-
-                if (isWithinMaxAngle) Destroy(bulletTransform.gameObject, 0.1f);
-
-                break;
-            }
-            // if the raycast didn't hit anything, move the projectile forward
-            projectilePosition += aimDirection * travelDistance;
-
-            yield return null;
-        }
+        // Start a coroutine to delay the bullet's impact
+        Transform testProjectile = Instantiate(currentProjectilePrefab, initialPosition.Value, Quaternion.identity);
+        testProjectile.GetComponent<NetworkObject>().Spawn(true);
+        testProjectile.GetComponent<TestProjectile>().Initialize(aimDirection.Value, initialPosition.Value, isWithinMaxAngle.Value);
     }
 
     private void ResetReadyToShoot()

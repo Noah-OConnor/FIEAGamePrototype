@@ -1,68 +1,85 @@
 using UnityEngine;
+using System.Collections;
+using Unity.Netcode;
 
 public class TestProjectile : MonoBehaviour
 {
-    [SerializeField] private float speed = 10f;
-    private int damage = 10;
-    private bool hasHit = false;
+    public float bulletSpeed = 10f;
+    public float maxBulletRange = 100f;
+    public int bulletDamage = 10;
+    public LayerMask aimColliderLayerMask;
+    public Transform floatingNumberPrefab;
+    public Transform hitEffectGreenPrefab;
+    public Transform hitEffectRedPrefab;
+    public TrailRenderer trailRenderer;
 
-    [SerializeField] private Transform floatingNumberPrefab;
-    [SerializeField] private Transform hitEffectGreenPrefab;
-    [SerializeField] private Transform hitEffectRedPrefab;
+    private Vector3 aimDirection;
+    private Vector3 initialPosition;
+    private bool isWithinMaxAngle;
 
-    [SerializeField] private float showMeshDelay;
-
-    private Vector3 originalPosition;
-
-    private Rigidbody rb;
-    private MeshRenderer meshRenderer;
-
-    void Start()
+    public void Initialize(Vector3 aimDirection, Vector3 initialPosition, bool isWithinMaxAngle)
     {
-        originalPosition = transform.position;
+        this.aimDirection = aimDirection;
+        this.initialPosition = initialPosition;
+        this.isWithinMaxAngle = isWithinMaxAngle;
 
-        rb = GetComponent<Rigidbody>();
-        meshRenderer = GetComponentInChildren<MeshRenderer>();
-        if (rb != null)
-        {
-            rb.linearVelocity = transform.forward * speed;
-        }
-        else
-        {
-            Debug.LogError("Rigidbody component missing from this gameobject. Add one.");
-        }
+        //print ("aimDirection: " + aimDirection + " | initialPosition: " + initialPosition + " | bool: " + isWithinMaxAngle);
+
+        StartCoroutine(BulletImpactDelay());
     }
 
-    private void Update()
+    private IEnumerator BulletImpactDelay()
     {
-        if (!meshRenderer.enabled && (transform.position - originalPosition).sqrMagnitude > 0.1f)
+        float totalDistance = 0;
+
+        Vector3 projectilePosition = initialPosition;
+
+        if (isWithinMaxAngle)
         {
-            meshRenderer.enabled = true;
+
+            trailRenderer.enabled = true;
+            transform.forward = aimDirection;
         }
-    }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (hasHit) return;
-        hasHit = true;
-
-        Vector3 hitPosition = transform.position; // Offset the hit position in the direction of the projectile's movement
-
-        if (collision.gameObject.CompareTag("Enemy"))
+        while (totalDistance < maxBulletRange)
         {
-            collision.gameObject.GetComponent<EnemyCollider>().TakeDamage(damage);
+            float travelDistance = isWithinMaxAngle ? bulletSpeed * Time.deltaTime : bulletSpeed * Time.deltaTime * 5;
+            totalDistance += travelDistance;
 
-            // spawn damage number
-            Transform floatingNumber = Instantiate(floatingNumberPrefab, hitPosition, Quaternion.identity);
-            floatingNumber.GetComponent<FloatingNumber>().SetNumber(damage);
-            // spawn hit enemy effect
-            Instantiate(hitEffectGreenPrefab, hitPosition, Quaternion.identity);
+            if (trailRenderer.enabled)
+            {
+                // Move the debug object to the projectile's position
+                transform.position = projectilePosition;
+            }
+
+            if (Physics.Raycast(projectilePosition, aimDirection, out RaycastHit hit, travelDistance, aimColliderLayerMask))
+            {
+                // Check if the raycast hit an enemy
+                if (hit.collider.gameObject.CompareTag("Enemy"))
+                {
+                    // Apply damage to the enemy
+                    hit.collider.gameObject.GetComponent<EnemyCollider>().TakeDamage(bulletDamage);
+
+                    // spawn damage number
+                    Transform floatingNumber = Instantiate(floatingNumberPrefab, hit.point, Quaternion.identity);
+                    floatingNumber.GetComponent<FloatingNumber>().SetNumber((int)bulletDamage);
+                    // spawn hit enemy effect
+                    Instantiate(hitEffectGreenPrefab, hit.point, Quaternion.identity);
+                }
+                else
+                {
+                    // spawn hit effect
+                    Instantiate(hitEffectRedPrefab, hit.point, Quaternion.identity);
+                }
+
+                if (isWithinMaxAngle) trailRenderer.enabled = true;
+
+                break;
+            }
+            // if the raycast didn't hit anything, move the projectile forward
+            projectilePosition += aimDirection * travelDistance;
+
+            yield return null;
         }
-        else
-        {
-            // spawn hit effect
-            Instantiate(hitEffectRedPrefab, hitPosition, Quaternion.identity);
-        }
-        Destroy(gameObject);
     }
 }

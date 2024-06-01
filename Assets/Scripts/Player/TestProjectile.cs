@@ -4,7 +4,7 @@ using Unity.Netcode;
 
 public class TestProjectile : NetworkBehaviour
 {
-    public float bulletSpeed = 10f;
+    public float bulletSpeed = 100f; // This needs to be derived from a scriptable object later
     public float maxBulletRange = 100f;
     public int bulletDamage = 10;
     public LayerMask aimColliderLayerMask;

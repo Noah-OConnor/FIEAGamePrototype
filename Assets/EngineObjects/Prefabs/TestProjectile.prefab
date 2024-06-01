@@ -326,7 +326,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85b36ff0ffcc2c44fad55ca66130d1c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletSpeed: 10
+  bulletSpeed: 100
   maxBulletRange: 100
   bulletDamage: 10
   aimColliderLayerMask:

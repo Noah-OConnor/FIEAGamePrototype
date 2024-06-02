@@ -14,7 +14,7 @@ public class FloatingNumber : MonoBehaviour
     private void Awake()
     {
         text = GetComponent<TMP_Text>();
-        mainCamera = GameManager.instance.cameraMain; // Get the main camera
+        mainCamera = GameManager.Instance.GetCameraMain(); // Get the main camera
 
         xSpeed = Random.Range(-speed, speed);
         zSpeed = Random.Range(-speed, speed);

@@ -1,36 +1,55 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Unity.Netcode;
+using System;
+
 
 public class GameManager : NetworkBehaviour
 {
-    public static GameManager instance;
+    public static GameManager Instance;
 
-    public List<Transform> playerTransforms;
+    public NetworkVariable<List<ulong>> playerIds = new NetworkVariable<List<ulong>>(default);
 
-    public Transform cameraMain;
+    private Transform cameraMain;
+
+    public event EventHandler OnValueChanged;
 
     private void Awake()
     {
-        if (instance == null)
-        {
-            instance = this;
-        }
-        else
-        {
-            Destroy(this);
-        }
+        Instance = this;
 
         cameraMain = Camera.main.transform;
     }
 
-    public void AddPlayerTransform(Transform playerTransform)
+    private void Update()
     {
-        playerTransforms.Add(playerTransform);
+        
     }
 
-    public void RemovePlayerTransform(Transform playerTransform)
+    public override void OnNetworkSpawn()
     {
-        playerTransforms.Remove(playerTransform);
+        playerIds.OnValueChanged += OnPlayerTransformsChanged;
+    }
+
+    private void OnPlayerTransformsChanged(List<ulong> previousValue, List<ulong> newValue)
+    {
+        OnValueChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void AddPlayerTransform(NetworkObjectReference playerTransform)
+    {
+        playerIds.Value.Add(playerTransform.NetworkObjectId);
+
+        print(playerIds.Value[0]);
+    }
+
+    public void RemovePlayerTransform(NetworkObjectReference playerTransform)
+    {
+        playerIds.Value.Remove(playerTransform.NetworkObjectId);
+    }
+
+    public Transform GetCameraMain()
+    {
+        return cameraMain;
     }
 }

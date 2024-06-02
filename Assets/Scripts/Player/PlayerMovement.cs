@@ -41,6 +41,7 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private float gravityForce = 20f;
     private Vector3 movement;
     private Rigidbody rb;
+    private NetworkObject networkObject;
 
     [Header("Debugging Info")]
     public float flatSpeed;
@@ -57,12 +58,17 @@ public class PlayerMovement : NetworkBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        GameManager.instance.AddPlayerTransform(transform);
+        networkObject = GetComponentInParent<NetworkObject>();
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        GameManager.Instance.AddPlayerTransform(networkObject);
     }
 
     public override void OnDestroy()
     {
-        GameManager.instance.RemovePlayerTransform(transform);
+        GameManager.Instance.RemovePlayerTransform(networkObject);
     }
 
     private void Update()

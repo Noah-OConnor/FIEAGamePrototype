@@ -46,7 +46,7 @@ public class AIAttack : MonoBehaviour
         animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
         agent.enabled = true;
-        player = aiMain.GetPlayer();
+        player = aiMain.GetTargetPlayer();
         currentState = AttackState.none;
 
         animator.SetBool("Combat", true);
@@ -65,6 +65,9 @@ public class AIAttack : MonoBehaviour
     protected virtual void OnDisable()
     {
         currentState = AttackState.none;
+        
+        aiMain.SetTargetPlayer(null);
+
         CancelInvoke(nameof(Chase));
         CancelInvoke(nameof(SpinMove));
         CancelInvoke(nameof(ShootCrossbow));
@@ -401,6 +404,8 @@ public class AIAttack : MonoBehaviour
         // Move to the last known player position
         agent.SetDestination(lastKnownPlayerPosition);
 
+        aiMain.SetTargetPlayer(null);
+
         while (searchTime < searchDuration)
         {
             if (currentState != AttackState.search)
@@ -434,11 +439,5 @@ public class AIAttack : MonoBehaviour
     {
         lastKnownPlayerPosition = position;
         searchTime = 0f;
-    }
-
-    public virtual void DisableColliders()
-    {
-        //rightWeaponTransform.GetComponent<Collider>().enabled = false;
-        //leftWeaponTransform.GetComponent<Collider>().enabled = false;
     }
 }

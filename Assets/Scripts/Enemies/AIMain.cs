@@ -1,11 +1,13 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
+using Unity.Netcode;
 
-public class AIMain : MonoBehaviour
+public class AIMain : NetworkBehaviour
 {
     [Header("Stats")]
     [SerializeField] protected float speed = 10f;
-    [SerializeField] protected float health = 100f;
+    [SerializeField] protected NetworkVariable<float> health = new NetworkVariable<float>(100f);
     [SerializeField] protected float damage = 10f;
     [SerializeField] protected float rotationSpeed = 5f;
     [SerializeField] protected float sightAngle = 45f;
@@ -32,9 +34,10 @@ public class AIMain : MonoBehaviour
     protected AIDead aiDead;
 
     // References
-    protected Transform player;
+    protected List<Transform> playerTransforms = new List<Transform>();
+    protected Transform targetPlayer;
 
-    protected PlayerEvents playerEvents;
+    protected List<PlayerEvents> playerEvents = new List<PlayerEvents>();
 
     [SerializeField] protected AIState currentState = AIState.idle;
     public enum AIState
@@ -57,12 +60,24 @@ public class AIMain : MonoBehaviour
         aiDead = GetComponent<AIDead>();
     }
 
-    protected virtual void Start()
+    public override void OnNetworkSpawn()
     {
-        if (GameManager.instance == null) return;
-        //player = GameManager.instance.playerTransforms[0];
-        playerEvents = player.GetComponent<PlayerEvents>();
-        playerEvents.onPlayerShoot += OnPlayerShoot;
+        if (GameManager.Instance == null) return;
+        foreach (ulong id in GameManager.Instance.playerIds.Value)
+        {
+            print(NetworkManager.SpawnManager.SpawnedObjects[id].transform.Find("Player").transform.name);
+            playerTransforms.Add(NetworkManager.SpawnManager.SpawnedObjects[id].transform.Find("Player").transform);
+        }
+
+        foreach (Transform t in playerTransforms)
+        {
+            if (t == null) continue;
+
+            PlayerEvents playerEvent = t.GetComponent<PlayerEvents>();
+
+            playerEvents.Add(playerEvent);
+            playerEvent.onPlayerShoot += OnPlayerShoot;
+        }
     }
 
     protected virtual void Update()
@@ -76,10 +91,9 @@ public class AIMain : MonoBehaviour
     {
         AIState oldState = currentState;
 
-        if (health <= 0)
+        if (health.Value <= 0)
         {
             currentState = AIState.dead;
-            aiAttack.DisableColliders();
         }
         else if (stunned)
         {
@@ -101,9 +115,9 @@ public class AIMain : MonoBehaviour
             hasDamageBeenTaken = false;
             hasPlayerShot = false;
 
-            aiAttack.SetLastKnownPlayerPosition(player.position);
+            aiAttack.SetLastKnownPlayerPosition(targetPlayer.position);
 
-            agent.SetDestination(player.position);
+            agent.SetDestination(targetPlayer.position);
         }
         else
         {
@@ -139,37 +153,83 @@ public class AIMain : MonoBehaviour
 
     public virtual void TakeDamage(float damage)
     {
-        if (health <= 0) return;
+        if (health.Value <= 0) return;
 
-        health -= damage;
+        //health.Value -= damage;
         hasDamageBeenTaken = true;
+
+        // damage the enemy through an rpc
+        TakedamageServerRpc(damage);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void TakedamageServerRpc(float damage)
+    {
+        health.Value -= damage;
     }
 
     public virtual bool CanSeePlayer()
     {
-        if (player == null) return false;
+        if (playerTransforms == null) return false;
 
-        Vector3 toPlayer = player.position - transform.position;
-        bool isPlayerInFront = Vector3.Angle(transform.forward, toPlayer) < sightAngle / 2;
-        bool isPlayerObstructed = Physics.Raycast(transform.position, toPlayer + new Vector3(0, 1, 0), out RaycastHit hit, 
-            sightRange, obstructionMask) && hit.transform == player;
+        foreach(Transform player in playerTransforms)
+        {
+            if (player == null) continue;
 
-        //if (hit.transform != null) print(hit.transform.name + " " + isPlayerInFront + " " + isPlayerObstructed);
-        return isPlayerInFront && isPlayerObstructed && toPlayer.sqrMagnitude <= Mathf.Pow(sightRange, 2);
+            Vector3 toPlayer = player.transform.position - transform.position;
+            bool isPlayerInFront = Vector3.Angle(transform.forward, toPlayer) < sightAngle / 2;
+            bool isPlayerObstructed = Physics.Raycast(transform.position, toPlayer + new Vector3(0, 1, 0), out RaycastHit hit, 
+                sightRange, obstructionMask) && hit.transform == player;
+
+            if (isPlayerInFront && isPlayerObstructed && toPlayer.sqrMagnitude <= Mathf.Pow(sightRange, 2))
+            {
+                if (targetPlayer == null)
+                {
+                    targetPlayer = player.transform;
+                }
+
+                return true;
+            }
+        }
+        return false;
     }
 
     public virtual bool IsPlayerInSightRange()
     {
-        if (player == null) return false;
+        if (playerTransforms == null) return false;
 
-        return Vector3.SqrMagnitude(transform.position - player.transform.position) <= Mathf.Pow(sightRange, 2);
+        foreach (Transform player in playerTransforms)
+        {
+            if (player == null) continue;
+
+            if(Vector3.SqrMagnitude(transform.position - player.transform.position) <= Mathf.Pow(sightRange, 2))
+            {
+                if (targetPlayer == null)
+                {
+                    targetPlayer = player.transform;
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     public virtual bool IsPlayerInAlertRange()
     {
-        if (player == null) return false;
+        if (playerTransforms == null) return false;
 
-        return Vector3.SqrMagnitude(transform.position - player.transform.position) <= Mathf.Pow(alertRange, 2);
+        foreach (Transform player in playerTransforms)
+        {
+            if (Vector3.SqrMagnitude(transform.position - player.transform.position) <= Mathf.Pow(alertRange, 2))
+            {
+                if (targetPlayer == null)
+                {
+                    targetPlayer = player.transform;
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     public virtual void OnPlayerShoot()
@@ -195,20 +255,15 @@ public class AIMain : MonoBehaviour
         return animator;
     }
 
-    public virtual Transform GetPlayer()
+    public virtual List<Transform> GetPlayer()
     {
-        return player;
+        return playerTransforms;
     }
 
     public AIState GetCurrentState()
     {
         return currentState;
     }
-
-    //public float GetRotationSpeed()
-    //{
-    //    return rotationSpeed;
-    //}
 
     public virtual void SetAttacking(bool value)
     {
@@ -224,5 +279,15 @@ public class AIMain : MonoBehaviour
     protected virtual void EndStun()
     {
         stunned = false;
+    }
+
+    public virtual void SetTargetPlayer(Transform player)
+    {
+        targetPlayer = player;
+    }
+
+    public virtual Transform GetTargetPlayer()
+    {
+        return targetPlayer;
     }
 }

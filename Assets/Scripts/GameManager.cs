@@ -21,11 +21,6 @@ public class GameManager : NetworkBehaviour
         cameraMain = Camera.main.transform;
     }
 
-    private void Update()
-    {
-        
-    }
-
     public override void OnNetworkSpawn()
     {
         playerIds.OnValueChanged += OnPlayerTransformsChanged;
@@ -39,8 +34,6 @@ public class GameManager : NetworkBehaviour
     public void AddPlayerTransform(NetworkObjectReference playerTransform)
     {
         playerIds.Value.Add(playerTransform.NetworkObjectId);
-
-        print(playerIds.Value[0]);
     }
 
     public void RemovePlayerTransform(NetworkObjectReference playerTransform)

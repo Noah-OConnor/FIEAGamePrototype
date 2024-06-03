@@ -68,7 +68,7 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void OnDestroy()
     {
-        GameManager.Instance.RemovePlayerTransform(networkObject);
+        //GameManager.Instance.RemovePlayerTransform(networkObject);
     }
 
     private void Update()

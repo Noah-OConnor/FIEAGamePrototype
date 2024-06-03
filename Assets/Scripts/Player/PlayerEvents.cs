@@ -10,12 +10,12 @@ public class PlayerEvents : MonoBehaviour
         onPlayerHealthChanged?.Invoke(health, maxHealth);
     }
 
-    public delegate void OnPlayerShoot();
+    public delegate void OnPlayerShoot(ulong playerId);
     public event OnPlayerShoot onPlayerShoot;
 
-    public void TriggerOnPlayerShoot()
+    public void TriggerOnPlayerShoot(ulong playerId)
     {
-        onPlayerShoot?.Invoke();
+        onPlayerShoot?.Invoke(playerId);
     }
 
     public delegate void OnPlayerAmmoChanged(float ammo, float maxAmmo);

@@ -20,7 +20,7 @@ public class AIMain : NetworkBehaviour
     // Flags
     protected bool hasPlayerShot = false;
     protected bool hasDamageBeenTaken = false;
-    protected bool attacking = false;
+    protected NetworkVariable<bool> attacking = new NetworkVariable<bool>(false);
     protected bool stunned = false;
 
     // Components
@@ -35,11 +35,12 @@ public class AIMain : NetworkBehaviour
 
     // References
     protected List<Transform> playerTransforms = new List<Transform>();
+    protected NetworkVariable<ulong> targetPlayerId = new NetworkVariable<ulong>(default);
     protected Transform targetPlayer;
 
     protected List<PlayerEvents> playerEvents = new List<PlayerEvents>();
 
-    [SerializeField] protected AIState currentState = AIState.idle;
+    [SerializeField] protected NetworkVariable<AIState> currentState = new NetworkVariable<AIState>(AIState.idle);
     public enum AIState
     {
         idle,
@@ -65,7 +66,6 @@ public class AIMain : NetworkBehaviour
         if (GameManager.Instance == null) return;
         foreach (ulong id in GameManager.Instance.playerIds.Value)
         {
-            print(NetworkManager.SpawnManager.SpawnedObjects[id].transform.Find("Player").transform.name);
             playerTransforms.Add(NetworkManager.SpawnManager.SpawnedObjects[id].transform.Find("Player").transform);
         }
 
@@ -78,42 +78,81 @@ public class AIMain : NetworkBehaviour
             playerEvents.Add(playerEvent);
             playerEvent.onPlayerShoot += OnPlayerShoot;
         }
+
+        currentState.OnValueChanged += (previous, current) =>
+        {
+            StateChangeHandler(current);
+        };
+
+        health.OnValueChanged += (previous, current) =>
+        {
+            OnHealthChanged();
+        };
     }
 
     protected virtual void Update()
     {
+        if (!IsSpawned && IsHost && Input.GetKeyDown(KeyCode.K))
+        {
+            GetComponent<NetworkObject>().Spawn(true);
+        }
+
+        if (!IsSpawned) return;
+
         StateHandler();
 
         animator.SetFloat("Forward", agent.velocity.magnitude);
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    protected virtual void UpdateCurrentStateServerRpc(AIState newState)
+    {
+        if (currentState.Value == newState) return;
+
+        currentState.Value = newState;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    protected virtual void UpdateAttackingBoolServerRpc(bool value)
+    {
+        attacking.Value = value;
+    }
+
     protected virtual void StateHandler()
     {
-        AIState oldState = currentState;
-
         if (health.Value <= 0)
         {
-            currentState = AIState.dead;
+            UpdateCurrentStateServerRpc(AIState.dead);
         }
         else if (stunned)
         {
-            currentState = AIState.stunned;
+            UpdateCurrentStateServerRpc(AIState.stunned);
         }
-        else if ((!hasDamageBeenTaken && !hasPlayerShot) && attacking || CanSeePlayer() || IsPlayerInAlertRange())
+        else if ((!hasDamageBeenTaken && !hasPlayerShot) && attacking.Value || CanSeePlayer() || IsPlayerInAlertRange())
         {
-            currentState = AIState.attack;
+            //print("the other one");
+            UpdateCurrentStateServerRpc(AIState.attack);
 
-            attacking = true;
+            UpdateAttackingBoolServerRpc(true);
             hasDamageBeenTaken = false;
             hasPlayerShot = false;
+
+            targetPlayer = GetNetworkObject(targetPlayerId.Value).transform.Find("Player");
+
+            aiAttack.SetLastKnownPlayerPosition(targetPlayer.position);
+
+            agent.SetDestination(targetPlayer.position);
         }
         else if (hasDamageBeenTaken || hasPlayerShot)
         {
-            currentState = AIState.attack;
+            print("hasDamageBeenTaken || hasPlayerShot");
+            UpdateCurrentStateServerRpc(AIState.attack);
 
-            attacking = true;
+            UpdateAttackingBoolServerRpc(true);
             hasDamageBeenTaken = false;
             hasPlayerShot = false;
+
+            targetPlayer = GetNetworkObject(targetPlayerId.Value).transform.Find("Player");
 
             aiAttack.SetLastKnownPlayerPosition(targetPlayer.position);
 
@@ -121,44 +160,44 @@ public class AIMain : NetworkBehaviour
         }
         else
         {
-            currentState = AIState.wander;
-        }
-
-        if (oldState != currentState)
-        {
-            aiWander.enabled = false;
-            aiAttack.enabled = false;
-            aiDead.enabled = false;
-
-            switch (currentState)
-            {
-                case AIState.idle:
-                    // not sure if we need this
-                    break;
-                case AIState.wander:
-                    aiWander.enabled = true;
-                    break;
-                case AIState.stunned:
-                    // not sure if we need this
-                    break;
-                case AIState.attack:
-                    aiAttack.enabled = true;
-                    break;
-                case AIState.dead:
-                    aiDead.enabled = true;
-                    break;
-            }
+            UpdateCurrentStateServerRpc(AIState.wander);
         }
     }
 
-    public virtual void TakeDamage(float damage)
+    protected virtual void StateChangeHandler(AIState newState)
+    {
+        aiWander.enabled = false;
+        aiAttack.enabled = false;
+        aiDead.enabled = false;
+
+        switch (currentState.Value)
+        {
+            case AIState.idle:
+                // not sure if we need this
+                break;
+            case AIState.wander:
+                aiWander.enabled = true;
+                break;
+            case AIState.stunned:
+                // not sure if we need this
+                break;
+            case AIState.attack:
+                aiAttack.enabled = true;
+                print("enabling attack state");
+                break;
+            case AIState.dead:
+                aiDead.enabled = true;
+                break;
+        }
+    }
+
+    public virtual void TakeDamage(float damage, ulong ownerId)
     {
         if (health.Value <= 0) return;
 
-        //health.Value -= damage;
-        hasDamageBeenTaken = true;
+        SetTargetPlayerIdServerRpc(ownerId);
+        //targetPlayer = GetNetworkObject(ownerId).transform.Find("Player");
 
-        // damage the enemy through an rpc
         TakedamageServerRpc(damage);
     }
 
@@ -166,6 +205,17 @@ public class AIMain : NetworkBehaviour
     public void TakedamageServerRpc(float damage)
     {
         health.Value -= damage;
+    }
+
+    private void OnHealthChanged()
+    {
+        hasDamageBeenTaken = true;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void SetTargetPlayerIdServerRpc(ulong playerId)
+    {
+        targetPlayerId.Value = playerId;
     }
 
     public virtual bool CanSeePlayer()
@@ -214,6 +264,20 @@ public class AIMain : NetworkBehaviour
         return false;
     }
 
+    public virtual bool IsPlayerInSightRange(ulong playerId)
+    {
+        Transform playerTransform = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerId].transform.Find("Player");
+        if(Vector3.SqrMagnitude(transform.position - playerTransform.position) <= Mathf.Pow(sightRange, 2))
+        {
+            if (targetPlayer == null)
+            {
+                targetPlayer = playerTransform;
+            }
+            return true;
+        }
+        return false;
+    }
+
     public virtual bool IsPlayerInAlertRange()
     {
         if (playerTransforms == null) return false;
@@ -232,9 +296,10 @@ public class AIMain : NetworkBehaviour
         return false;
     }
 
-    public virtual void OnPlayerShoot()
+    public virtual void OnPlayerShoot(ulong playerId)
     {
-        if (IsPlayerInSightRange())
+        //targetPlayer = playerTransforms[0];
+        if (IsPlayerInSightRange(playerId))
         {
             hasPlayerShot = true;
         }
@@ -262,12 +327,12 @@ public class AIMain : NetworkBehaviour
 
     public AIState GetCurrentState()
     {
-        return currentState;
+        return currentState.Value;
     }
 
     public virtual void SetAttacking(bool value)
     {
-        attacking = value;
+        UpdateAttackingBoolServerRpc(value);
     }
 
     public virtual void SetStunned(float length)
@@ -289,5 +354,10 @@ public class AIMain : NetworkBehaviour
     public virtual Transform GetTargetPlayer()
     {
         return targetPlayer;
+    }
+
+    public virtual ulong GetTargetPlayerId()
+    {
+        return targetPlayerId.Value;
     }
 }

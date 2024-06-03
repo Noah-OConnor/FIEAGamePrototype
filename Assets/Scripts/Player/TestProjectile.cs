@@ -17,13 +17,16 @@ public class TestProjectile : NetworkBehaviour
     private Vector3 initialPosition;
     private bool isWithinMaxAngle;
 
+    private ulong playerId;
+
     [SerializeField] private Transform fakeProjectilePrefab;
 
-    public void Initialize(Vector3 aimDirection, Vector3 initialPosition, bool isWithinMaxAngle)
+    public void Initialize(Vector3 aimDirection, Vector3 initialPosition, bool isWithinMaxAngle, ulong ownerId)
     {
         this.aimDirection = aimDirection;
         this.initialPosition = initialPosition;
         this.isWithinMaxAngle = isWithinMaxAngle;
+        playerId = ownerId;
 
         StartCoroutine(BulletImpactDelay());
     }
@@ -57,7 +60,7 @@ public class TestProjectile : NetworkBehaviour
                 if (hit.collider.gameObject.CompareTag("Enemy"))
                 {
                     // Apply damage to the enemy
-                    hit.collider.gameObject.GetComponent<EnemyCollider>().TakeDamage(bulletDamage);
+                    hit.collider.gameObject.GetComponent<EnemyCollider>().TakeDamage(bulletDamage, playerId);
 
                     // spawn damage number
                     Transform floatingNumber = Instantiate(floatingNumberPrefab, hit.point, Quaternion.identity);

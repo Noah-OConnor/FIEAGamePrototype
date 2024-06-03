@@ -642,6 +642,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1539248732404906239}
+  - component: {fileID: 3979719647811552418}
   - component: {fileID: 5491518054835113400}
   - component: {fileID: 3003342541370368235}
   - component: {fileID: 7471493273910573135}
@@ -649,7 +650,6 @@ GameObject:
   - component: {fileID: 2854573246738928898}
   - component: {fileID: 5384891322974582616}
   - component: {fileID: 8607345988813977979}
-  - component: {fileID: 3979719647811552418}
   - component: {fileID: 6573698463509323840}
   - component: {fileID: 7301836382626645499}
   - component: {fileID: 5803822527123636934}
@@ -676,6 +676,27 @@ Transform:
   - {fileID: 3247576243257502107}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3979719647811552418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2267876561937371157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 437822003
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &5491518054835113400
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -689,7 +710,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 0
-  health: 50
+  health:
+    m_InternalValue: 100
   damage: 10
   rotationSpeed: 2
   sightAngle: 60
@@ -698,7 +720,8 @@ MonoBehaviour:
   obstructionMask:
     serializedVersion: 2
     m_Bits: 65
-  currentState: 0
+  currentState:
+    m_InternalValue: 0
 --- !u!114 &3003342541370368235
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -728,10 +751,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   searchDuration: 10
   searchRadius: 7
-  searchSpeed: 3
+  searchSpeed: 4
   chaseSpeed: 4
   rotationSpeed: 8
-  currentState: 0
+  currentState:
+    m_InternalValue: 0
   rightWeapon: {fileID: 11400000, guid: 6f3ba479762012f4285e3d0934833b0c, type: 2}
   leftWeapon: {fileID: 11400000, guid: 6f3ba479762012f4285e3d0934833b0c, type: 2}
   arrowSpawnTransform: {fileID: 5735652197527686030}
@@ -823,27 +847,6 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 126
   m_CollisionDetection: 1
---- !u!114 &3979719647811552418
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2267876561937371157}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 437822003
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
 --- !u!114 &6573698463509323840
 MonoBehaviour:
   m_ObjectHideFlags: 0

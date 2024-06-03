@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
+using Unity.Netcode;
 
-public class AIAttack : MonoBehaviour
+public class AIAttack : NetworkBehaviour
 {
     [SerializeField] protected float searchDuration = 10f;
     [SerializeField] protected float searchRadius = 5f;
@@ -12,15 +13,15 @@ public class AIAttack : MonoBehaviour
 
     protected float summonTimer = 0f;
     protected float searchTime;
-    protected Vector3 lastKnownPlayerPosition;
+    protected NetworkVariable<Vector3> lastKnownPlayerPosition = new NetworkVariable<Vector3>(default);
     protected bool attacking = false;
 
     protected AIMain aiMain;
     protected Animator animator;
     protected NavMeshAgent agent;
-    protected Transform player;
+    protected NetworkVariable<Vector3> targetPlayerPosition = new NetworkVariable<Vector3>(default);
 
-    [SerializeField] protected AttackState currentState;
+    [SerializeField] protected NetworkVariable<AttackState> currentState;
     protected enum AttackState
     {
         none,
@@ -46,8 +47,8 @@ public class AIAttack : MonoBehaviour
         animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
         agent.enabled = true;
-        player = aiMain.GetTargetPlayer();
-        currentState = AttackState.none;
+        //SetTargetPlayerPositionServerRpc(aiMain.GetTargetPlayer().position);
+        SetCurrentStateServerRpc(AttackState.none);
 
         animator.SetBool("Combat", true);
 
@@ -60,11 +61,15 @@ public class AIAttack : MonoBehaviour
         {
             leftWeapon = unarmedWeapon;
         }
+
+
+        //print(aiMain.GetTargetPlayer().name);
+        //print(aiMain.GetTargetPlayer().transform.position);
     }
 
     protected virtual void OnDisable()
     {
-        currentState = AttackState.none;
+        SetCurrentStateServerRpc(AttackState.none);
         
         aiMain.SetTargetPlayer(null);
 
@@ -82,26 +87,45 @@ public class AIAttack : MonoBehaviour
         summonTimer += Time.deltaTime;
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    protected virtual void SetCurrentStateServerRpc(AttackState newState)
+    {
+        currentState.Value = newState;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    protected virtual void SetTargetPlayerPositionServerRpc(Vector3 newPosition)
+    {
+        targetPlayerPosition.Value = newPosition;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    protected virtual void SetLastKnownPlayerPositionServerRpc(Vector3 newPosition)
+    {
+        lastKnownPlayerPosition.Value = newPosition;
+    }
+
     protected virtual void StateHandler()
     {
-        AttackState oldState = currentState;
+        SetTargetPlayerPositionServerRpc(NetworkManager.Singleton.SpawnManager.SpawnedObjects[aiMain.GetTargetPlayerId()].transform.position);
+        AttackState oldState = currentState.Value;
 
         if (aiMain.CanSeePlayer() && (IsPlayerInRange(rightWeapon.rangedRange) || IsPlayerInRange(rightWeapon.meleeRange)) || attacking)
         {
-            currentState = AttackState.attack;
+            SetCurrentStateServerRpc(AttackState.attack);
 
             FacePlayer();
         }
         else if (aiMain.CanSeePlayer() || aiMain.IsPlayerInAlertRange())
         {
-            currentState = AttackState.chase;
+            SetCurrentStateServerRpc(AttackState.chase);
         }
         else
         {
-            currentState = AttackState.search;
+            SetCurrentStateServerRpc(AttackState.search);
         }
 
-        if (oldState != currentState)
+        if (oldState != currentState.Value)
         {
             animator.SetBool("Blocking", false);
             animator.SetBool("Spinning", false);
@@ -118,7 +142,7 @@ public class AIAttack : MonoBehaviour
             }
 
             CancelInvoke(nameof(Chase));
-            switch (currentState)
+            switch (currentState.Value)
             {
                 case AttackState.chase:
                     InvokeRepeating(nameof(Chase), 0f, 0.1f);
@@ -246,10 +270,10 @@ public class AIAttack : MonoBehaviour
 
     protected virtual void ShootCrossbow()
     {
-        if (currentState != AttackState.attack) return;
+        if (currentState.Value != AttackState.attack) return;
 
         Transform arrowTransform = Instantiate(arrowPrefab, arrowSpawnTransform.position, Quaternion.identity);
-        Vector3 direction = (player.position + new Vector3(0, 1, 0) - arrowSpawnTransform.position).normalized;
+        Vector3 direction = (targetPlayerPosition.Value + new Vector3(0, 1, 0) - arrowSpawnTransform.position).normalized;
 
         arrowTransform.rotation = Quaternion.LookRotation(direction);
         arrowTransform.GetComponent<Rigidbody>().AddForce(direction * rightWeapon.projectileSpeed, ForceMode.Impulse);
@@ -316,7 +340,7 @@ public class AIAttack : MonoBehaviour
         minionTransform.GetComponent<AIMain>().SetAttacking(true);
         minionTransform.GetComponent<NavMeshAgent>().enabled = false;
         minionTransform.GetComponent<Animator>().SetTrigger("SummonMinion");
-        minionTransform.GetComponent<AIAttack>().SetLastKnownPlayerPosition(player.position);
+        minionTransform.GetComponent<AIAttack>().SetLastKnownPlayerPosition(targetPlayerPosition.Value);
         StartCoroutine(RaiseMinion(minionTransform));
     }
 
@@ -336,9 +360,9 @@ public class AIAttack : MonoBehaviour
 
     protected virtual void ShootMagic()
     {
-        if (currentState != AttackState.attack) return;
+        if (currentState.Value != AttackState.attack) return;
         Transform magicTransform = Instantiate(magicPrefab, magicSpawnTransform.position, Quaternion.identity);
-        magicTransform.GetComponent<EnemyMagic>().SetPlayerTransform(player);
+        //magicTransform.GetComponent<EnemyMagic>().SetPlayerTransform(targetPlayerPosition);
     }
 
     protected virtual void UnarmedAttack()
@@ -370,30 +394,30 @@ public class AIAttack : MonoBehaviour
         // Face the player
         if (IsPlayerInRange(rightWeapon.meleeRange) || IsPlayerInRange(rightWeapon.rangedRange) || aiMain.CanSeePlayer())
         {
-            Vector3 direction = (player.position - transform.position).normalized;
+            Vector3 direction = (targetPlayerPosition.Value - transform.position).normalized;
             direction.y = 0;
             Quaternion lookRotation = Quaternion.LookRotation(direction);
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * rotationSpeed);
-            lastKnownPlayerPosition = player.position;
+            SetLastKnownPlayerPositionServerRpc(targetPlayerPosition.Value);
         }
     }
 
     protected virtual void Chase()
     {
-        if (currentState != AttackState.chase) return;
+        if (currentState.Value != AttackState.chase) return;
 
         agent.speed = chaseSpeed;
-        lastKnownPlayerPosition = player.position;
-        agent.SetDestination(player.position);
+        SetLastKnownPlayerPositionServerRpc(targetPlayerPosition.Value);
+        agent.SetDestination(targetPlayerPosition.Value);
     }
 
     protected virtual void SpinMove()
     {
-        if (currentState != AttackState.attack) return;
+        if (currentState.Value != AttackState.attack) return;
 
         agent.speed = chaseSpeed / 2f;
-        lastKnownPlayerPosition = player.position;
-        agent.SetDestination(player.position);
+        SetLastKnownPlayerPositionServerRpc(targetPlayerPosition.Value);
+        agent.SetDestination(targetPlayerPosition.Value);
     }
 
     protected virtual IEnumerator SearchRoutine()
@@ -402,13 +426,11 @@ public class AIAttack : MonoBehaviour
         agent.speed = searchSpeed;
 
         // Move to the last known player position
-        agent.SetDestination(lastKnownPlayerPosition);
-
-        aiMain.SetTargetPlayer(null);
+        agent.SetDestination(lastKnownPlayerPosition.Value);
 
         while (searchTime < searchDuration)
         {
-            if (currentState != AttackState.search)
+            if (currentState.Value != AttackState.search)
             {
                 yield break;
             }
@@ -417,7 +439,7 @@ public class AIAttack : MonoBehaviour
             if (agent.remainingDistance < 0.1f)
             {
                 Vector3 randomDirection = Random.insideUnitSphere * searchRadius;
-                randomDirection += lastKnownPlayerPosition;
+                randomDirection += lastKnownPlayerPosition.Value;
                 NavMeshHit hit;
                 NavMesh.SamplePosition(randomDirection, out hit, searchRadius, 1);
                 agent.SetDestination(hit.position);
@@ -427,17 +449,18 @@ public class AIAttack : MonoBehaviour
             yield return null;
         }
 
+        //aiMain.SetTargetPlayer(null);
         aiMain.SetAttacking(false);
     }
 
     public virtual bool IsPlayerInRange(float range)
     {
-        return Vector3.SqrMagnitude(transform.position - player.position) <= Mathf.Pow(range, 2);
+        return Vector3.SqrMagnitude(transform.position - targetPlayerPosition.Value) <= Mathf.Pow(range, 2);
     }
 
     public virtual void SetLastKnownPlayerPosition(Vector3 position)
     {
-        lastKnownPlayerPosition = position;
+        SetLastKnownPlayerPositionServerRpc(position);
         searchTime = 0f;
     }
 }

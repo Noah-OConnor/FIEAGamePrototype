@@ -27,12 +27,14 @@ public class PlayerWeapon : NetworkBehaviour
     private Vector3 cameraPosition;
 
     private PlayerEvents playerEvents;
+    private NetworkObject networkObject;
 
     private void Start()
     {
         currentAmmo = magazineCapacity;
         cameraPosition = Camera.main.transform.position;
         playerEvents = GetComponent<PlayerEvents>();
+        networkObject = GetComponentInParent<NetworkObject>();
     }
 
     public override void OnNetworkSpawn()
@@ -77,17 +79,19 @@ public class PlayerWeapon : NetworkBehaviour
         Vector3 initialPosition = isWithinMaxAngle ? projectileSpawnTransform.position : cameraPosition;
         aimDirection = isWithinMaxAngle ? aimDirection : (mouseWorldPosition - cameraPosition).normalized;
 
-        Transform projectileTransform = Instantiate(currentProjectilePrefab, initialPosition, Quaternion.identity);
-        projectileTransform.GetComponent<TestProjectile>().Initialize(aimDirection, initialPosition, isWithinMaxAngle);
+        ulong ownerId = GetComponentInParent<NetworkObject>().NetworkObjectId;
 
-        SpawnFakeProjectileServerRpc(aimDirection, initialPosition, projectileTransform.GetComponent<TestProjectile>().bulletSpeed, OwnerClientId);
+        Transform projectileTransform = Instantiate(currentProjectilePrefab, initialPosition, Quaternion.identity);
+        projectileTransform.GetComponent<TestProjectile>().Initialize(aimDirection, initialPosition, isWithinMaxAngle, ownerId);
+
+        SpawnFakeProjectileServerRpc(aimDirection, initialPosition, projectileTransform.GetComponent<TestProjectile>().bulletSpeed, NetworkObjectId);
 
         // Reduce the current ammo
         currentAmmo--;
         playerEvents.TriggerOnPlayerAmmoChanged(currentAmmo, magazineCapacity);
 
         // Trigger the OnPlayerShoot event
-        playerEvents.TriggerOnPlayerShoot();
+        playerEvents.TriggerOnPlayerShoot(networkObject.NetworkObjectId);
 
         // Set the weapon to ready to shoot after the fire rate
         Invoke("ResetReadyToShoot", 60f / fireRate);

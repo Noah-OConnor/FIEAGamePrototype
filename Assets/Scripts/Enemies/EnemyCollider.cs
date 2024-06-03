@@ -11,15 +11,15 @@ public class EnemyCollider : MonoBehaviour
         aiMain = GetComponentInParent<AIMain>();
     }
 
-    public void TakeDamage(float damage)
+    public void TakeDamage(float damage, ulong ownerId)
     {
         if (criticalCollider)
         {
-            aiMain.TakeDamage(damage * 2);
+            aiMain.TakeDamage(damage * 2, ownerId);
         }
         else
         {
-            aiMain.TakeDamage(damage);
+            aiMain.TakeDamage(damage, ownerId);
         }
     }
 }

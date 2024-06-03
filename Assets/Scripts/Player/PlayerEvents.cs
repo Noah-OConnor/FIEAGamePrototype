@@ -15,7 +15,7 @@ public class PlayerEvents : MonoBehaviour
 
     public void TriggerOnPlayerShoot(ulong playerId)
     {
-        onPlayerShoot?.Invoke(playerId);
+        this.onPlayerShoot?.Invoke(playerId);
     }
 
     public delegate void OnPlayerAmmoChanged(float ammo, float maxAmmo);

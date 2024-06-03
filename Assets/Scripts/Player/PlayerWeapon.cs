@@ -62,14 +62,6 @@ public class PlayerWeapon : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void SpawnFakeProjectileServerRpc(Vector3 aimDirection, Vector3 initialPosition, float bulletSpeed, ulong ownerId)
-    {
-        Transform fakeProjectile = Instantiate(fakeProjectilePrefab, initialPosition, Quaternion.identity);
-        fakeProjectile.GetComponent<FakeProjectile>().Initialize(aimDirection, initialPosition, bulletSpeed);
-        fakeProjectile.GetComponent<NetworkObject>().SpawnWithOwnership(ownerId);
-    }
-
     private void Shoot()
     {
         Vector3 aimDirection = (mouseWorldPosition - projectileSpawnTransform.position).normalized;
@@ -79,12 +71,13 @@ public class PlayerWeapon : NetworkBehaviour
         Vector3 initialPosition = isWithinMaxAngle ? projectileSpawnTransform.position : cameraPosition;
         aimDirection = isWithinMaxAngle ? aimDirection : (mouseWorldPosition - cameraPosition).normalized;
 
-        ulong ownerId = GetComponentInParent<NetworkObject>().NetworkObjectId;
+        ulong playerId = GetComponentInParent<NetworkObject>().NetworkObjectId;
 
         Transform projectileTransform = Instantiate(currentProjectilePrefab, initialPosition, Quaternion.identity);
-        projectileTransform.GetComponent<TestProjectile>().Initialize(aimDirection, initialPosition, isWithinMaxAngle, ownerId);
+        projectileTransform.GetComponent<TestProjectile>().Initialize(aimDirection, initialPosition, isWithinMaxAngle, playerId);
 
-        SpawnFakeProjectileServerRpc(aimDirection, initialPosition, projectileTransform.GetComponent<TestProjectile>().bulletSpeed, NetworkObjectId);
+        SpawnFakeProjectileServerRpc(aimDirection, initialPosition, projectileTransform.GetComponent<TestProjectile>().bulletSpeed, 
+            NetworkManager.Singleton.LocalClientId);
 
         // Reduce the current ammo
         currentAmmo--;
@@ -95,6 +88,14 @@ public class PlayerWeapon : NetworkBehaviour
 
         // Set the weapon to ready to shoot after the fire rate
         Invoke("ResetReadyToShoot", 60f / fireRate);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnFakeProjectileServerRpc(Vector3 aimDirection, Vector3 initialPosition, float bulletSpeed, ulong playerId)
+    {
+        Transform fakeProjectile = Instantiate(fakeProjectilePrefab, initialPosition, Quaternion.identity);
+        fakeProjectile.GetComponent<FakeProjectile>().Initialize(aimDirection, initialPosition, bulletSpeed);
+        fakeProjectile.GetComponent<NetworkObject>().SpawnWithOwnership(playerId);
     }
 
     private void ResetReadyToShoot()

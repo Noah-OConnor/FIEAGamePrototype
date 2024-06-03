@@ -63,12 +63,19 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        GameManager.Instance.AddPlayerTransform(networkObject);
+        if (GameManager.Instance.IsSpawned == false)
+        {
+            GameManager.Instance.OnGameManagerSpawned += OnGameManagerNetworkSpawn;
+        }
+        else
+        {
+            GameManager.Instance.AddPlayerId(networkObject.NetworkObjectId);
+        }
     }
 
-    public override void OnDestroy()
+    private void OnGameManagerNetworkSpawn()
     {
-        //GameManager.Instance.RemovePlayerTransform(networkObject);
+        GameManager.Instance.AddPlayerId(networkObject.NetworkObjectId);
     }
 
     private void Update()

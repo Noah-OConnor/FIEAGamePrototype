@@ -64,7 +64,7 @@ public class AIMain : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         if (GameManager.Instance == null) return;
-        foreach (ulong id in GameManager.Instance.playerIds.Value)
+        foreach (ulong id in GameManager.Instance.playerIds)
         {
             playerTransforms.Add(NetworkManager.SpawnManager.SpawnedObjects[id].transform.Find("Player").transform);
         }
@@ -92,11 +92,6 @@ public class AIMain : NetworkBehaviour
 
     protected virtual void Update()
     {
-        if (!IsSpawned && IsHost && Input.GetKeyDown(KeyCode.K))
-        {
-            GetComponent<NetworkObject>().Spawn(true);
-        }
-
         if (!IsSpawned) return;
 
         StateHandler();
@@ -298,7 +293,6 @@ public class AIMain : NetworkBehaviour
 
     public virtual void OnPlayerShoot(ulong playerId)
     {
-        //targetPlayer = playerTransforms[0];
         if (IsPlayerInSightRange(playerId))
         {
             hasPlayerShot = true;

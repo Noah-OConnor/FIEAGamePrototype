@@ -6,39 +6,37 @@ using System;
 
 public class GameManager : NetworkBehaviour
 {
-    public static GameManager Instance;
+    public static GameManager Instance { get; private set; }
 
-    public NetworkVariable<List<ulong>> playerIds = new NetworkVariable<List<ulong>>(default);
+    [SerializeField] public NetworkList<ulong> playerIds;
 
     private Transform cameraMain;
 
-    public event EventHandler OnValueChanged;
+    public event Action OnGameManagerSpawned;
 
     private void Awake()
     {
         Instance = this;
 
         cameraMain = Camera.main.transform;
+
+        playerIds = new NetworkList<ulong>();
     }
 
     public override void OnNetworkSpawn()
     {
-        playerIds.OnValueChanged += OnPlayerTransformsChanged;
+        OnGameManagerSpawned?.Invoke();
     }
 
-    private void OnPlayerTransformsChanged(List<ulong> previousValue, List<ulong> newValue)
+    public void AddPlayerId(ulong playerId)
     {
-        OnValueChanged?.Invoke(this, EventArgs.Empty);
+        AddPlayerIdServerRpc(playerId);
     }
 
-    public void AddPlayerTransform(NetworkObjectReference playerTransform)
+    [ServerRpc(RequireOwnership = false)]
+    public void AddPlayerIdServerRpc(ulong playerId, ServerRpcParams rpcParams = default)
     {
-        playerIds.Value.Add(playerTransform.NetworkObjectId);
-    }
-
-    public void RemovePlayerTransform(NetworkObjectReference playerTransform)
-    {
-        playerIds.Value.Remove(playerTransform.NetworkObjectId);
+        playerIds.Add(playerId);
     }
 
     public Transform GetCameraMain()

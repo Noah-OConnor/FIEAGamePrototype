@@ -4,11 +4,11 @@ public class EnemyCollider : MonoBehaviour
 {
     [SerializeField] bool criticalCollider = false;
 
-    private AIMain aiMain;
+    private NetcodeAIMain aiMain;
 
     private void Awake()
     {
-        aiMain = GetComponentInParent<AIMain>();
+        aiMain = GetComponentInParent<NetcodeAIMain>();
     }
 
     public void TakeDamage(float damage, ulong ownerId)

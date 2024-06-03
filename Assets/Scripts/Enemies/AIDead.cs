@@ -4,19 +4,17 @@ using UnityEngine.AI;
 
 public class AIDead : MonoBehaviour
 {
-    protected AIMain aiMain;
+    protected NetcodeAIMain aiMain;
     protected Animator animator;
     protected NavMeshAgent agent;
 
     protected virtual void OnEnable()
     {
-        aiMain = GetComponent<AIMain>();
+        aiMain = GetComponent<NetcodeAIMain>();
         animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
 
-        //agent.SetDestination(transform.position);
         agent.enabled = false;
-
 
         animator.SetBool("Dead", true);
         StartCoroutine(LerpSpeedToZero());

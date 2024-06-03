@@ -47,6 +47,7 @@ public class PlayerMovement : NetworkBehaviour
     public float flatSpeed;
     public Vector3 rbVelocity;
     public MovementState state;
+    public Transform UI;
 
     public enum MovementState
     {
@@ -70,6 +71,11 @@ public class PlayerMovement : NetworkBehaviour
         else
         {
             GameManager.Instance.AddPlayerId(networkObject.NetworkObjectId);
+        }
+
+        if (IsOwner)
+        {
+            UI.gameObject.SetActive(true);
         }
     }
 

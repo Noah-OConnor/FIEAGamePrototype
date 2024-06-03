@@ -568,6 +568,9 @@ GameObject:
   - component: {fileID: 5466314313956161673}
   - component: {fileID: 7049524499385300798}
   - component: {fileID: 7992663361392286743}
+  - component: {fileID: 5056586565633804903}
+  - component: {fileID: 3863736533134791904}
+  - component: {fileID: 86298434536344854}
   - component: {fileID: 1139268876328793921}
   - component: {fileID: 263376231885212612}
   - component: {fileID: 7174191650878471172}
@@ -609,7 +612,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1362001027
+  GlobalObjectIdHash: 2449370028
   InScenePlacedSourceGlobalObjectIdHash: 437822003
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -636,6 +639,48 @@ MonoBehaviour:
     m_Bits: 65
   currentState:
     m_InternalValue: 0
+--- !u!114 &5056586565633804903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173755585069526198}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27cf2a2a85f6be94b9e1ad337f29b654, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rightWeapon: {fileID: 11400000, guid: 6f3ba479762012f4285e3d0934833b0c, type: 2}
+  leftWeapon: {fileID: 11400000, guid: 6f3ba479762012f4285e3d0934833b0c, type: 2}
+  arrowSpawnTransform: {fileID: 8247594177208541854}
+  magicSpawnTransform: {fileID: 8756038065234935048}
+  currentState:
+    m_InternalValue: 0
+--- !u!114 &3863736533134791904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173755585069526198}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5502cbdbaadcd34fb5d858c4a1d49cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &86298434536344854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173755585069526198}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77c18d36adb3e484ca8ce5b4f72a3937, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!195 &1139268876328793921
 NavMeshAgent:
   m_ObjectHideFlags: 0

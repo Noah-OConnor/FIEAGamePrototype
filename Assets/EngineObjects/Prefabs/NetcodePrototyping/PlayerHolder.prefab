@@ -313,6 +313,7 @@ MonoBehaviour:
   flatSpeed: 0
   rbVelocity: {x: 0, y: 0, z: 0}
   state: 0
+  UI: {fileID: 2398415302276519305}
 --- !u!114 &6473043636043869639
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -17,3 +17,15 @@ MonoBehaviour:
   sightRange: 15
   alertRange: 5
   sightAngle: 45
+  wanderIntervalRange: {x: 1, y: 2}
+  wanderRadius: 5
+  wanderSpeed: 2
+  searchDuration: 10
+  searchRadius: 7
+  searchSpeed: 4
+  chaseSpeed: 4
+  rotationSpeed: 8
+  arrowPrefab: {fileID: 2556042617939518537, guid: 72624a1ce7a258942af2945349b31572, type: 3}
+  magicPrefab: {fileID: 2556042617939518537, guid: 7b584bf2bb52c974ca4db253d354b96b, type: 3}
+  minionPrefab: {fileID: 0}
+  unarmedWeapon: {fileID: 11400000, guid: 6f3ba479762012f4285e3d0934833b0c, type: 2}

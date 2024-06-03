@@ -10,7 +10,7 @@ public class NetcodeAIMain : NetworkBehaviour
     [SerializeField] protected LayerMask obstructionMask;
     protected NetworkVariable<float> currentHealth = new NetworkVariable<float>();
 
-    protected bool stunned;
+    protected NetworkVariable<bool> stunned = new NetworkVariable<bool>();
     protected NetworkVariable<bool> attacking = new NetworkVariable<bool>();
     protected NetworkVariable<bool> hasDamageBeenTaken = new NetworkVariable<bool>();
     protected NetworkVariable<bool> hasPlayerShot = new NetworkVariable<bool>();
@@ -19,12 +19,13 @@ public class NetcodeAIMain : NetworkBehaviour
     protected Rigidbody rb;
     protected Animator animator;
 
-    protected NetcodeAIWander aiWander;
+    protected AIWander aiWander;
     protected NetcodeAIAttack aiAttack;
-    protected NetcodeAIDead aiDead;
+    protected AIDead aiDead;
 
     protected List<PlayerEvents> playerEvents = new List<PlayerEvents>();
 
+    protected NetworkVariable<ulong> targetPlayerId = new NetworkVariable<ulong>();
     protected Transform targetPlayer;
 
     [SerializeField] protected NetworkVariable<AIState> currentState = new NetworkVariable<AIState>(AIState.idle);
@@ -43,9 +44,9 @@ public class NetcodeAIMain : NetworkBehaviour
         rb = GetComponent<Rigidbody>();
         animator = GetComponentInChildren<Animator>();
 
-        aiWander = GetComponent<NetcodeAIWander>();
+        aiWander = GetComponent<AIWander>();
         aiAttack = GetComponent<NetcodeAIAttack>();
-        aiDead = GetComponent<NetcodeAIDead>();
+        aiDead = GetComponent<AIDead>();
 
         currentState.OnValueChanged += (previous, current) => StateChangeHandler();
     }
@@ -59,7 +60,11 @@ public class NetcodeAIMain : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         GameManager.Instance.playerIds.OnListChanged += (current) => OnPlayerIdListChange();
-        currentHealth.Value = enemyStats.health;
+        
+        if (IsHost)
+        {
+            currentHealth.Value = enemyStats.health;
+        }
 
         foreach (ulong id in GameManager.Instance.playerIds)
         {
@@ -76,6 +81,15 @@ public class NetcodeAIMain : NetworkBehaviour
         StateHandler();
 
         animator.SetFloat("Forward", agent.velocity.magnitude);
+
+        if (IsHost)
+        {
+            if(Input.GetKeyDown(KeyCode.L))
+            {
+                SetAttackingServerRpc(false);
+                //ResetTargetPlayerClientRpc();
+            }
+        }
     }
 
     protected virtual void StateHandler()
@@ -87,7 +101,7 @@ public class NetcodeAIMain : NetworkBehaviour
                 SetCurrentStateServerRpc(AIState.dead);
             }
         }
-        else if (stunned)
+        else if (stunned.Value)
         {
             if (currentState.Value != AIState.stunned)
             {
@@ -96,12 +110,21 @@ public class NetcodeAIMain : NetworkBehaviour
         }
         else if (hasDamageBeenTaken.Value || hasPlayerShot.Value || attacking.Value || CanSeePlayer() || IsPlayerInAlertRange())
         {
+            if (hasDamageBeenTaken.Value || hasPlayerShot.Value)
+            {
+                if (IsOwner)
+                {
+                    SetAgentDestinationServerRpc(targetPlayer.position);
+                }
+            }
+
             if (currentState.Value != AIState.attack)
             {
                 SetCurrentStateServerRpc(AIState.attack);
                 SetAttackingServerRpc(true);
             }
 
+            if (!IsHost) return;
             SetHasPlayerShotServerRpc(false);
             SetHasDamageBeenTakenServerRpc(false);
         }
@@ -116,24 +139,24 @@ public class NetcodeAIMain : NetworkBehaviour
 
     protected virtual void StateChangeHandler()
     {
-        //aiWander.enabled = false;
-        //aiAttack.enabled = false;
-        //aiDead.enabled = false;
+        aiWander.enabled = false;
+        aiAttack.enabled = false;
+        aiDead.enabled = false;
 
         switch (currentState.Value)
         {
             case AIState.idle:
                 break;
             case AIState.wander:
-                //aiWander.enabled = true;
+                aiWander.enabled = true;
                 break;
             case AIState.stunned:
                 break;
             case AIState.attack:
-                //aiAttack.enabled = true;
+                aiAttack.enabled = true;
                 break;
             case AIState.dead:
-                //aiDead.enabled = true;
+                aiDead.enabled = true;
                 break;
         }
     }
@@ -147,7 +170,7 @@ public class NetcodeAIMain : NetworkBehaviour
             {
                 if (targetPlayer == null)
                 {
-                    targetPlayer = playerTransform;
+                    SetTargetPlayerIdServerRpc(playerId);
                 }
                 return true;
             }
@@ -164,7 +187,7 @@ public class NetcodeAIMain : NetworkBehaviour
             {
                 if (targetPlayer == null)
                 {
-                    targetPlayer = playerTransform;
+                    SetTargetPlayerIdServerRpc(playerId);
                 }
                 return true;
             }
@@ -187,7 +210,7 @@ public class NetcodeAIMain : NetworkBehaviour
             {
                 if (targetPlayer == null)
                 {
-                    targetPlayer = playerTransform;
+                    SetTargetPlayerIdServerRpc(playerId);
                 }
                 return true;
             }
@@ -201,7 +224,7 @@ public class NetcodeAIMain : NetworkBehaviour
 
         if (targetPlayer == null)
         {
-            targetPlayer = GetNetworkObject(playerId).transform.Find("Player").transform;
+            SetTargetPlayerIdServerRpc(playerId);
         }
 
         TakeDamageServerRpc(damage);
@@ -215,9 +238,39 @@ public class NetcodeAIMain : NetworkBehaviour
         Transform playerTransform = GetNetworkObject(playerId).transform.Find("Player").transform;
         if (Vector3.SqrMagnitude(transform.position - playerTransform.position) <= Mathf.Pow(enemyStats.sightRange, 2))
         {
-            targetPlayer = playerTransform;
+            SetTargetPlayerIdServerRpc(playerId);
             SetHasPlayerShotServerRpc(true);
         }
+    }
+
+    public virtual void EndStun()
+    {
+        SetStunnedServerRpc(false, 0);
+    }
+
+    [ClientRpc]
+    protected virtual void SetTargetPlayerTransformClientRpc(ulong playerId)
+    {
+        targetPlayer = GetNetworkObject(playerId).transform.Find("Player").transform;
+    }
+
+    [ClientRpc]
+    public virtual void ResetTargetPlayerClientRpc()
+    {
+        targetPlayer = null;
+    }
+
+    [ClientRpc]
+    public virtual void SetAgentDestinationClientRpc(Vector3 destination)
+    {
+        agent.SetDestination(destination);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public virtual void SetAgentDestinationServerRpc(Vector3 destination)
+    {
+        agent.SetDestination(destination);
+        SetAgentDestinationClientRpc(destination);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -227,7 +280,7 @@ public class NetcodeAIMain : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    protected virtual void SetAttackingServerRpc(bool value)
+    public virtual void SetAttackingServerRpc(bool value)
     {
         attacking.Value = value;
     }
@@ -245,8 +298,29 @@ public class NetcodeAIMain : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
+    public virtual void SetStunnedServerRpc(bool value, float timer)
+    {
+        stunned.Value = value;
+        if (timer > 0) Invoke(nameof(EndStun), timer);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
     protected virtual void SetCurrentStateServerRpc(AIState newState)
     {
         currentState.Value = newState;
     }
+
+    [ServerRpc(RequireOwnership = false)]
+    protected virtual void SetTargetPlayerIdServerRpc(ulong playerId)
+    {
+        print(playerId + " is the new target player id");
+        targetPlayerId.Value = playerId;
+        SetTargetPlayerTransformClientRpc(playerId);
+    }
+
+    public virtual NavMeshAgent GetAgent() { return agent; }
+    public virtual EnemyStats GetEnemyStats() { return enemyStats; }
+    public virtual Animator GetAnimator() { return animator; }
+    public virtual AIState GetCurrentState() { return currentState.Value; }
+    public virtual Transform GetTargetPlayer() { return targetPlayer; }
 }

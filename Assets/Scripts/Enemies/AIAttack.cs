@@ -389,6 +389,7 @@ public class AIAttack : NetworkBehaviour
             Attack();
         }
     }
+
     protected virtual void FacePlayer()
     {
         // Face the player

@@ -5,13 +5,13 @@ using Unity.Netcode;
 
 public class AIDead : NetworkBehaviour
 {
-    protected NetcodeAIMain aiMain;
+    protected AIMain aiMain;
     protected Animator animator;
     protected NavMeshAgent agent;
 
     protected virtual void OnEnable()
     {
-        aiMain = GetComponent<NetcodeAIMain>();
+        aiMain = GetComponent<AIMain>();
         animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
         agent.enabled = false;

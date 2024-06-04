@@ -5,7 +5,6 @@ public class EnemyStats : ScriptableObject
 {
     [Header("Main")]
     public float health;
-    public float speed;
     public float sightRange;
     public float alertRange;
     public float sightAngle;

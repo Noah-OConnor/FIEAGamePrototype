@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf2b345c1de44a1489e1eff2c16fd0d9, type: 3}
-  m_Name: SkeletonMinion
+  m_Name: SkeletonRanger
   m_EditorClassIdentifier: 
-  health: 70
-  sightRange: 15
+  health: 120
+  sightRange: 20
   alertRange: 7
   sightAngle: 90
   wanderIntervalRange: {x: 3, y: 5}

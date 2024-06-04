@@ -1,17 +1,23 @@
 using UnityEngine;
+using Unity.Netcode;
 
-public class EnemyMagic : MonoBehaviour
+public class EnemyMagic : NetworkBehaviour
 {
     public float speed = 10f;
     public float turnSpeed = 200f; // degrees per second
     public float knockbackForce = 10f;
     private Rigidbody rb;
     private Transform playerTransform;
+    private NetworkObject networkObject;
 
-    private void Start()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        networkObject = GetComponent<NetworkObject>();
+    }
 
+    public override void OnNetworkSpawn()
+    {
         // Rotate the projectile to face the player
         if (playerTransform != null)
         {
@@ -56,7 +62,13 @@ public class EnemyMagic : MonoBehaviour
         GetComponent<Collider>().enabled = false;
         GetComponent<MeshRenderer>().enabled = false;
         rb.isKinematic = true;
-        Destroy(gameObject, 2f);
+        Invoke(nameof(MyDespawnServerRpc), 1.5f);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void MyDespawnServerRpc()
+    {
+        networkObject.Despawn(true);
     }
 
     public void SetPlayerTransform(Transform playerTransform)

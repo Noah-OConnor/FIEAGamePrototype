@@ -3,13 +3,13 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.AI;
 
-public class NetcodeAIAttack : NetworkBehaviour
+public class AIAttack : NetworkBehaviour
 {
     protected float summonTimer = 0f;
     protected float searchTimer;
     protected NetworkVariable<bool> attacking = new NetworkVariable<bool>(false);
 
-    protected NetcodeAIMain aiMain;
+    protected AIMain aiMain;
     protected Animator animator;
     protected NavMeshAgent agent;
     protected EnemyStats enemyStats;
@@ -41,7 +41,7 @@ public class NetcodeAIAttack : NetworkBehaviour
 
     protected void Awake()
     {
-        aiMain = GetComponent<NetcodeAIMain>();
+        aiMain = GetComponent<AIMain>();
         animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
         enemyStats = aiMain.GetEnemyStats();
@@ -144,6 +144,7 @@ public class NetcodeAIAttack : NetworkBehaviour
                 chaseRoutine = StartCoroutine(ChaseRoutine());
                 break;
             case AttackState.attack:
+                Attack();
                 break;
             case AttackState.search:
                 searchRoutine = StartCoroutine(SearchRoutine());
@@ -158,23 +159,23 @@ public class NetcodeAIAttack : NetworkBehaviour
         {
             case EnemyWeaponStats.Weapons.sword:
                 agent.stoppingDistance = rightWeapon.meleeRange;
-                //SwordAttack();
+                SwordAttack();
                 break;
             case EnemyWeaponStats.Weapons.axe:
                 agent.stoppingDistance = rightWeapon.meleeRange;
-                //AxeAttack();
+                AxeAttack();
                 break;
             case EnemyWeaponStats.Weapons.crossbow:
                 agent.stoppingDistance = rightWeapon.rangedRange;
-                //CrossbowAttack();
+                CrossbowAttack();
                 break;
             case EnemyWeaponStats.Weapons.staff:
                 agent.stoppingDistance = rightWeapon.rangedRange;
-                //StaffAttack();
+                StaffAttack();
                 break;
             case EnemyWeaponStats.Weapons.unarmed:
                 agent.stoppingDistance = rightWeapon.meleeRange;
-                //UnarmedAttack();
+                UnarmedAttack();
                 break;
         }
 
@@ -321,13 +322,13 @@ public class NetcodeAIAttack : NetworkBehaviour
             switch (leftWeapon.weaponType)
             {
                 case EnemyWeaponStats.Weapons.shield:
-                    raiseMinionRoutine = StartCoroutine(RaiseMinionRoutine());
+                    SpawnMinionServerRpc();
                     animator.SetTrigger("Summon");
                     animator.SetTrigger("ShieldBlock");
                     animator.SetBool("Blocking", true);
                     break;
                 default:    // unarmed or missing reference
-                    raiseMinionRoutine = StartCoroutine(RaiseMinionRoutine());
+                    SpawnMinionServerRpc();
                     animator.SetTrigger("Summon");
                     break;
             }
@@ -337,29 +338,27 @@ public class NetcodeAIAttack : NetworkBehaviour
             switch (leftWeapon.weaponType)
             {
                 case EnemyWeaponStats.Weapons.shield:
-                    Invoke(nameof(ShootMagic), 0.3f);
+                    Invoke(nameof(SpawnMagicServerRpc), 0.3f);
                     animator.SetTrigger("1HandStaffAttack");
                     animator.SetTrigger("ShieldBlock");
                     animator.SetBool("Blocking", true);
                     break;
                 default:    // unarmed or missing reference
-                    Invoke(nameof(ShootMagic), 0.3f);
+                    Invoke(nameof(SpawnMagicServerRpc), 0.3f);
                     animator.SetTrigger("1HandStaffAttack");
                     break;
             }
         }
     }
 
-    protected virtual IEnumerator RaiseMinionRoutine()
+    protected virtual IEnumerator RaiseMinionRoutine(Transform minionTransform)
     {
-        Transform minionTransform = Instantiate(enemyStats.minionPrefab,
-            transform.position + (transform.forward * 2f) - (transform.up * 2f), transform.rotation);
-        NetcodeAIMain minionAIMain = minionTransform.GetComponent<NetcodeAIMain>();
+        AIMain minionAIMain = minionTransform.GetComponent<AIMain>();
         minionAIMain.SetStunnedServerRpc(true, 3.5f);
         minionAIMain.SetAttackingServerRpc(true);
         minionAIMain.GetAgent().enabled = false;
         minionAIMain.GetAnimator().SetTrigger("SummonMinion");
-        minionTransform.GetComponent<NetcodeAIAttack>().SetLastKnownPlayerPositionServerRpc(targetPlayerPosition);
+        minionTransform.GetComponent<AIAttack>().SetLastKnownPlayerPositionServerRpc(targetPlayerPosition);
 
         float timer = 0f;
         Vector3 startPosition = minionTransform.position;
@@ -373,10 +372,23 @@ public class NetcodeAIAttack : NetworkBehaviour
         }
     }
 
-    protected virtual void ShootMagic()
+    [ServerRpc(RequireOwnership = false)]
+    protected virtual void SpawnMinionServerRpc()
+    {
+        Transform minionTransform = Instantiate(enemyStats.minionPrefab,
+            transform.position + (transform.forward * 2f) - (transform.up * 2f), transform.rotation);
+        minionTransform.GetComponent<NetworkObject>().Spawn();
+
+        raiseMinionRoutine = StartCoroutine(RaiseMinionRoutine(minionTransform));
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    protected virtual void SpawnMagicServerRpc()
     {
         if (currentState.Value != AttackState.attack) return;
-        Transform magicTransform = Instantiate(enemyStats.magicPrefab, magicSpawnTransform.position, Quaternion.identity);
+        Transform magicTransform = Instantiate(enemyStats.magicPrefab, magicSpawnTransform.position, transform.rotation);
+        magicTransform.GetComponent<NetworkObject>().Spawn();
+        magicTransform.GetComponent<EnemyMagic>().SetPlayerTransform(aiMain.GetTargetPlayer());
     }
 
     protected virtual void UnarmedAttack()
@@ -452,15 +464,11 @@ public class NetcodeAIAttack : NetworkBehaviour
 
     protected virtual void FacePlayer()
     {
-        // Face the player
-        if (IsPlayerInRange(rightWeapon.meleeRange) || IsPlayerInRange(rightWeapon.rangedRange) || aiMain.CanSeePlayer())
-        {
-            Vector3 direction = (targetPlayerPosition - transform.position).normalized;
-            direction.y = 0;
-            Quaternion lookRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * enemyStats.rotationSpeed);
-            SetLastKnownPlayerPositionServerRpc(targetPlayerPosition);
-        }
+        Vector3 direction = (targetPlayerPosition - transform.position).normalized;
+        direction.y = 0;
+        Quaternion lookRotation = Quaternion.LookRotation(direction);
+        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * enemyStats.rotationSpeed);
+        SetLastKnownPlayerPositionServerRpc(targetPlayerPosition);
     }
 
     protected virtual bool IsPlayerInRange(float range)

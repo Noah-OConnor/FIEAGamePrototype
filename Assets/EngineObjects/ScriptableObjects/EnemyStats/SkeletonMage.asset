@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf2b345c1de44a1489e1eff2c16fd0d9, type: 3}
-  m_Name: SkeletonMinion
+  m_Name: SkeletonMage
   m_EditorClassIdentifier: 
-  health: 70
-  sightRange: 15
+  health: 150
+  sightRange: 20
   alertRange: 7
   sightAngle: 90
   wanderIntervalRange: {x: 3, y: 5}
@@ -22,7 +22,7 @@ MonoBehaviour:
   searchDuration: 10
   searchRadius: 7
   searchSpeed: 5
-  chaseSpeed: 7
+  chaseSpeed: 6
   rotationSpeed: 20
   arrowPrefab: {fileID: 2556042617939518537, guid: 72624a1ce7a258942af2945349b31572, type: 3}
   magicPrefab: {fileID: 2556042617939518537, guid: 7b584bf2bb52c974ca4db253d354b96b, type: 3}

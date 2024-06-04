@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 052b3b48d25e48642985dd6adf0aadb8, type: 3}
-  m_Name: Unarmed
+  m_Name: SkeletonShieldLarge
   m_EditorClassIdentifier: 
-  weaponType: 0
-  damage: 5
-  meleeRange: 1.75
+  weaponType: 1
+  damage: 15
+  meleeRange: 2
   rangedRange: 0
   projectileSpeed: 0
-  cooldown: 5
-  knockback: 0.5
+  cooldown: 0
+  knockback: 2

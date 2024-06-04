@@ -3,7 +3,7 @@ using UnityEngine.AI;
 using Unity.Netcode;
 using System.Collections.Generic;
 
-public class NetcodeAIMain : NetworkBehaviour
+public class AIMain : NetworkBehaviour
 {
     [Header("Stats")]
     [SerializeField] protected EnemyStats enemyStats;
@@ -20,7 +20,7 @@ public class NetcodeAIMain : NetworkBehaviour
     protected Animator animator;
 
     protected AIWander aiWander;
-    protected NetcodeAIAttack aiAttack;
+    protected AIAttack aiAttack;
     protected AIDead aiDead;
 
     protected List<PlayerEvents> playerEvents = new List<PlayerEvents>();
@@ -45,7 +45,7 @@ public class NetcodeAIMain : NetworkBehaviour
         animator = GetComponentInChildren<Animator>();
 
         aiWander = GetComponent<AIWander>();
-        aiAttack = GetComponent<NetcodeAIAttack>();
+        aiAttack = GetComponent<AIAttack>();
         aiDead = GetComponent<AIDead>();
 
         currentState.OnValueChanged += (previous, current) => StateChangeHandler();
@@ -284,6 +284,7 @@ public class NetcodeAIMain : NetworkBehaviour
     [ClientRpc]
     public virtual void SetAgentDestinationClientRpc(Vector3 destination)
     {
+        if (!agent.enabled) return;
         agent.SetDestination(destination);
     }
 

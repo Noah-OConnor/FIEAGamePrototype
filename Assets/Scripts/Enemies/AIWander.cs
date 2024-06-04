@@ -4,7 +4,7 @@ using System.Collections;
 
 public class AIWander : MonoBehaviour
 {
-    protected NetcodeAIMain aiMain;
+    protected AIMain aiMain;
     protected NavMeshAgent agent;
     protected EnemyStats enemyStats;
 
@@ -12,7 +12,7 @@ public class AIWander : MonoBehaviour
 
     protected virtual void OnEnable()
     {
-        aiMain = GetComponent<NetcodeAIMain>();
+        aiMain = GetComponent<AIMain>();
         agent = aiMain.GetAgent();
         enemyStats = aiMain.GetEnemyStats();
         agent.enabled = true;
@@ -37,7 +37,7 @@ public class AIWander : MonoBehaviour
             agent.speed = enemyStats.wanderSpeed;
             float wanderInterval = Random.Range(enemyStats.wanderIntervalRange.x, enemyStats.wanderIntervalRange.y);
             yield return new WaitForSeconds(wanderInterval);
-            if (aiMain.GetCurrentState() != NetcodeAIMain.AIState.wander) yield break;
+            if (aiMain.GetCurrentState() != AIMain.AIState.wander) yield break;
 
             Vector3 randomDirection = Random.insideUnitSphere * enemyStats.wanderRadius;
             randomDirection += transform.position;

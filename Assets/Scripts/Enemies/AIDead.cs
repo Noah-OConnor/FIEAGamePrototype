@@ -15,6 +15,7 @@ public class AIDead : NetworkBehaviour
         animator = aiMain.GetAnimator();
         agent = aiMain.GetAgent();
         agent.enabled = false;
+        aiMain.TriggerOnEnemyDeath();
 
         animator.SetBool("Dead", true);
         StartCoroutine(LerpSpeedToZero());

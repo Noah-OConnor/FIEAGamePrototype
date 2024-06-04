@@ -11,6 +11,17 @@ public class EnemySpawnTrigger : NetworkBehaviour
     private NetworkVariable<int> killCount = new NetworkVariable<int>(0);
     private NetworkVariable<bool> hasSpawned = new NetworkVariable<bool>(false);
 
+    private void Awake()
+    {
+        killCount.OnValueChanged += (previousValue, newValue) =>
+        {
+            if (newValue >= spawnPoints.Count)
+            {
+                blocker.SetActive(false);
+            }
+        };
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (!hasSpawned.Value && other.CompareTag("Player"))
@@ -21,7 +32,16 @@ public class EnemySpawnTrigger : NetworkBehaviour
                 hasSpawned.Value = true;
                 Transform enemyTransform = Instantiate(enemyPrefab, spawnPoint.position, spawnPoint.rotation).transform; 
                 enemyTransform.GetComponent<NetworkObject>().Spawn();
+                enemyTransform.GetComponent<AIMain>().onEnemyDeath += IncreaseKillCountServerRpc;
             }
         }
     }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void IncreaseKillCountServerRpc()
+    {
+        killCount.Value++;
+    }
+
+
 }

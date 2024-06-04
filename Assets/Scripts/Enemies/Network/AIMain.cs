@@ -38,6 +38,14 @@ public class AIMain : NetworkBehaviour
         dead
     }
 
+    public delegate void OnEnemyDeath();
+    public event OnEnemyDeath onEnemyDeath;
+
+    public void TriggerOnEnemyDeath()
+    {
+        onEnemyDeath?.Invoke();
+    }
+
     protected virtual void Awake()
     {
         agent = GetComponent<NavMeshAgent>();

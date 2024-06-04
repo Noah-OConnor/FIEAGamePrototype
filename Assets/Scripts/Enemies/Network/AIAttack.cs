@@ -241,15 +241,15 @@ public class AIAttack : NetworkBehaviour
 
     protected virtual IEnumerator SpinMoveRoutine()
     {
-        while (attacking.Value)
-        {
-            agent.speed = enemyStats.chaseSpeed / 2f;
+        agent.speed = enemyStats.chaseSpeed / 2f;
+        agent.stoppingDistance = 1.5f;
 
-            if (IsOwner)
-            {
-                aiMain.SetAgentDestinationServerRpc(targetPlayerPosition);
-            }
-        }
+        if (IsOwner)
+        {
+            print("Spinning");
+            aiMain.SetAgentDestinationServerRpc(targetPlayerPosition);
+        } 
+        
         yield return null;
     }
 
@@ -439,7 +439,7 @@ public class AIAttack : NetworkBehaviour
                 yield break;
             }
 
-            if (agent.remainingDistance < 0.5f)
+            if (agent.isActiveAndEnabled && agent.remainingDistance < 0.5f)
             {
                 Vector3 randomDirection = Random.insideUnitSphere * enemyStats.searchRadius;
                 randomDirection += lastKnownPlayerPosition.Value;

@@ -16,7 +16,7 @@ public class AIDead : NetworkBehaviour
         agent = aiMain.GetAgent();
         agent.enabled = false;
 
-        if (IsServer) animator.SetBool("Dead", true);
+        animator.SetBool("Dead", true);
         StartCoroutine(LerpSpeedToZero());
     }
 
@@ -32,6 +32,25 @@ public class AIDead : NetworkBehaviour
             yield return null;
         }
 
-        if (IsServer) animator.SetFloat("Forward", 0); // Ensure speed is set to 0 at the end
+        animator.SetFloat("Forward", 0); // Ensure speed is set to 0 at the end
+
+        yield return new WaitForSeconds(5f);
+
+        // lerp the object downwards
+        Vector3 startPos = transform.position;
+        Vector3 endPos = startPos - Vector3.up * 2;
+        float lerpDuration = 2f;
+        for (float t = 0; t < lerpDuration; t += Time.deltaTime)
+        {
+            transform.position = Vector3.Lerp(startPos, endPos, t / lerpDuration);
+            yield return null;
+        }
+        if (IsServer) gameObject.SetActive(false);
+    }
+
+    protected virtual void OnDisable()
+    {
+        agent.enabled = true;
+        if (IsServer) Destroy(gameObject);
     }
 }

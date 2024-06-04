@@ -258,6 +258,7 @@ GameObject:
   - component: {fileID: 4833625930512708060}
   - component: {fileID: 5950616254490928454}
   - component: {fileID: 5441773335242380793}
+  - component: {fileID: 5967148144360565148}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -273,8 +274,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1948792671549446350}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 15.38, y: 0, z: 10.59}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -310,6 +311,7 @@ MonoBehaviour:
     m_Bits: 1
   maxSlopeAngle: 45
   gravityForce: 20
+  playerCapsule: {fileID: 4082385720719649182}
   flatSpeed: 0
   rbVelocity: {x: 0, y: 0, z: 0}
   state: 0
@@ -407,6 +409,14 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 1
+--- !u!33 &5967148144360565148
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1948792671549446350}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1962193147478302024
 GameObject:
   m_ObjectHideFlags: 0
@@ -875,7 +885,7 @@ GameObject:
   - component: {fileID: 3950204689317168166}
   - component: {fileID: 7212289327697638443}
   - component: {fileID: 6573965029061144872}
-  - component: {fileID: 3941046760814487800}
+  - component: {fileID: 4353846970130693872}
   m_Layer: 6
   m_Name: Capsule
   m_TagString: Player
@@ -974,7 +984,7 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3941046760814487800
+--- !u!114 &4353846970130693872
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -990,9 +1000,9 @@ MonoBehaviour:
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
-  SyncRotAngleX: 1
+  SyncRotAngleX: 0
   SyncRotAngleY: 1
-  SyncRotAngleZ: 1
+  SyncRotAngleZ: 0
   SyncScaleX: 0
   SyncScaleY: 0
   SyncScaleZ: 0

@@ -42,6 +42,7 @@ public class PlayerMovement : NetworkBehaviour
     private Vector3 movement;
     private Rigidbody rb;
     private NetworkObject networkObject;
+    [SerializeField] private Transform playerCapsule;
 
     [Header("Debugging Info")]
     public float flatSpeed;
@@ -77,6 +78,19 @@ public class PlayerMovement : NetworkBehaviour
         {
             UI.gameObject.SetActive(true);
         }
+
+        rb.isKinematic = false;
+
+        if (GameManager.Instance.spawnPoint != null)
+        {
+            transform.position = GameManager.Instance.spawnPoint.position;
+            playerCapsule.position = GameManager.Instance.spawnPoint.position + new Vector3(0, 1, 0);
+        }
+        else
+        {
+            print("No Spawn point found");
+        }
+
     }
 
     private void OnGameManagerNetworkSpawn()
@@ -105,6 +119,22 @@ public class PlayerMovement : NetworkBehaviour
         if (rb.linearVelocity.y < -50)
         {
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, -50, rb.linearVelocity.z);
+        }
+
+
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            if (GameManager.Instance.spawnPoint != null)
+            {
+                transform.position = GameManager.Instance.spawnPoint.position;
+                playerCapsule.position = GameManager.Instance.spawnPoint.position + new Vector3(0, 1, 0);
+            }
+            else
+            {
+                transform.position = new Vector3(0, 1, 0);
+                playerCapsule.position = new Vector3(0, 2, 0);
+                print("No Spawn point found, Spawning at 0, 1, 0");
+            }
         }
     }
 

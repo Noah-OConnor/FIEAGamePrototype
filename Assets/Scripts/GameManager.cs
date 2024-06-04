@@ -11,6 +11,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] public NetworkList<ulong> playerIds;
 
     private Transform cameraMain;
+    public Transform spawnPoint;
 
     public event Action OnGameManagerSpawned;
 

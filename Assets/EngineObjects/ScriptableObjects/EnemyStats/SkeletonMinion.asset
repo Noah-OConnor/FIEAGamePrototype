@@ -15,9 +15,9 @@ MonoBehaviour:
   health: 50
   speed: 4
   sightRange: 15
-  alertRange: 5
-  sightAngle: 45
-  wanderIntervalRange: {x: 1, y: 2}
+  alertRange: 7
+  sightAngle: 90
+  wanderIntervalRange: {x: 3, y: 5}
   wanderRadius: 5
   wanderSpeed: 2
   searchDuration: 10

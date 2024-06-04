@@ -577,6 +577,7 @@ GameObject:
   - component: {fileID: 8875717537011975193}
   - component: {fileID: 1555151282843861104}
   - component: {fileID: 3838899930862056600}
+  - component: {fileID: 4382827234018516309}
   m_Layer: 0
   m_Name: Netcode_Skeleton_Minion_Unarmed
   m_TagString: Enemy
@@ -612,7 +613,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2449370028
+  GlobalObjectIdHash: 1362001027
   InScenePlacedSourceGlobalObjectIdHash: 437822003
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -651,6 +652,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27cf2a2a85f6be94b9e1ad337f29b654, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  targetPlayerPosition: {x: 0, y: 0, z: 0}
+  lastKnownPlayerPosition:
+    m_InternalValue: {x: 0, y: 0, z: 0}
   rightWeapon: {fileID: 11400000, guid: 6f3ba479762012f4285e3d0934833b0c, type: 2}
   leftWeapon: {fileID: 11400000, guid: 6f3ba479762012f4285e3d0934833b0c, type: 2}
   arrowSpawnTransform: {fileID: 8247594177208541854}
@@ -790,7 +794,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1173755585069526198}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ad8deae8091111f4eb30a56c1f4e0d3e, type: 3}
   m_Name: 
@@ -823,6 +827,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &4382827234018516309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173755585069526198}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TransitionStateInfoList:
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 618863525
+    DestinationState: 1121630246
+    TransitionDuration: 0
+    TriggerNameHash: 2074866571
+    TransitionIndex: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
+    OriginatingState: 104603497
+    DestinationState: 1121630246
+    TransitionDuration: 0.25
+    TriggerNameHash: 2074866571
+    TransitionIndex: 0
+  m_Animator: {fileID: 263376231885212612}
 --- !u!1 &1227016736362552182
 GameObject:
   m_ObjectHideFlags: 0

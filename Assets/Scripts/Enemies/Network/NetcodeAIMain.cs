@@ -49,12 +49,31 @@ public class NetcodeAIMain : NetworkBehaviour
         aiDead = GetComponent<AIDead>();
 
         currentState.OnValueChanged += (previous, current) => StateChangeHandler();
+        targetPlayerId.OnValueChanged += (previous, current) => OnTargetPlayerChanged();
     }
 
     protected virtual void OnPlayerIdListChange()
     {
         GetNetworkObject(GameManager.Instance.playerIds[GameManager.Instance.playerIds.Count - 1])
             .transform.Find("Player").GetComponent<PlayerEvents>().onPlayerShoot += OnPlayerShoot;
+    }
+
+    protected void OnTargetPlayerChanged()
+    {
+        if (IsServer)
+        {
+            var targetPlayerNetworkObject = GetNetworkObject(targetPlayerId.Value);
+            if (targetPlayerNetworkObject != null)
+            {
+                print("target found, changing ownership to " + targetPlayerNetworkObject.OwnerClientId);
+                GetComponent<NetworkObject>().ChangeOwnership(targetPlayerNetworkObject.OwnerClientId);
+            }
+            else
+            {
+                print("no target, removing ownership");
+                GetComponent<NetworkObject>().RemoveOwnership();
+            }
+        }
     }
 
     public override void OnNetworkSpawn()
@@ -72,11 +91,13 @@ public class NetcodeAIMain : NetworkBehaviour
             GetNetworkObject(GameManager.Instance.playerIds[GameManager.Instance.playerIds.Count - 1])
                 .transform.Find("Player").GetComponent<PlayerEvents>().onPlayerShoot += OnPlayerShoot;
         }
+
+        print(OwnerClientId + " is the owner of " + gameObject.name);
     }
 
     protected virtual void Update()
     {
-        if (!IsSpawned) return;
+        if (!IsSpawned || !IsOwner) return;
 
         StateHandler();
 
@@ -115,6 +136,7 @@ public class NetcodeAIMain : NetworkBehaviour
                 if (IsOwner)
                 {
                     SetAgentDestinationServerRpc(targetPlayer.position);
+                    aiAttack.SetSearchTimer(0);
                 }
             }
 
@@ -124,7 +146,6 @@ public class NetcodeAIMain : NetworkBehaviour
                 SetAttackingServerRpc(true);
             }
 
-            if (!IsHost) return;
             SetHasPlayerShotServerRpc(false);
             SetHasDamageBeenTakenServerRpc(false);
         }
@@ -267,9 +288,15 @@ public class NetcodeAIMain : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
+    public virtual void ResetTargetPlayerIdServerRpc()
+    {
+        targetPlayerId.Value = 0;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
     public virtual void SetAgentDestinationServerRpc(Vector3 destination)
     {
-        agent.SetDestination(destination);
+        //agent.SetDestination(destination);
         SetAgentDestinationClientRpc(destination);
     }
 

@@ -67,10 +67,12 @@ public class NetcodeAIAttack : NetworkBehaviour
     {
         aiMain.ResetTargetPlayerClientRpc();
         animator.SetBool("Combat", false);
+        SetCurrentStateServerRpc(AttackState.none);
     }
 
     protected virtual void Update()
     {
+        if (!IsOwner) return;
         StateHandler();
 
         summonTimer += Time.deltaTime;
@@ -425,7 +427,6 @@ public class NetcodeAIAttack : NetworkBehaviour
                 yield break;
             }
 
-            // If the enemy has reached the last known player position, make it wander around that position
             if (agent.remainingDistance < 0.5f)
             {
                 Vector3 randomDirection = Random.insideUnitSphere * enemyStats.searchRadius;
@@ -436,6 +437,9 @@ public class NetcodeAIAttack : NetworkBehaviour
                 if (IsOwner)
                 {
                     aiMain.SetAgentDestinationServerRpc(hit.position);
+
+                    aiMain.ResetTargetPlayerIdServerRpc();
+                    aiMain.ResetTargetPlayerClientRpc();
                 }
             }
 
@@ -462,6 +466,11 @@ public class NetcodeAIAttack : NetworkBehaviour
     protected virtual bool IsPlayerInRange(float range)
     {
         return Vector3.SqrMagnitude(transform.position - targetPlayerPosition) <= Mathf.Pow(range, 2);
+    }
+
+    public virtual void SetSearchTimer(float newTimer)
+    {
+        searchTimer = newTimer;
     }
 
     [ServerRpc(RequireOwnership = false)]
